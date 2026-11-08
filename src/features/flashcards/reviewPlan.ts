@@ -1,4 +1,5 @@
 import type { Flashcard } from "../../types/word";
+import { getFlashcardFront } from "./review.ts";
 
 export interface ReviewPlanStats {
   dueToday: number;
@@ -58,7 +59,7 @@ export function getEarlyReviewDiagnostics(cards: Flashcard[], now = Date.now()):
     const isFutureDue = card.dueAt > now;
     return {
       id: card.id,
-      word: card.word,
+      word: getFlashcardFront(card),
       dueAt: card.dueAt,
       repetitions: card.repetitions,
       lastReviewedAt: card.lastReviewedAt,

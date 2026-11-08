@@ -1,4 +1,5 @@
 import { NavLink } from "react-router-dom";
+import { useI18n } from "../i18n/I18nProvider";
 
 const links = [
   { to: "/", label: "查词", end: true },
@@ -8,6 +9,7 @@ const links = [
 ] as const;
 
 export function BottomNav() {
+  const { t } = useI18n();
   return (
     <nav className="fixed bottom-0 left-0 right-0 z-10 border-t border-slate-200 bg-white/95 pb-[env(safe-area-inset-bottom)] backdrop-blur">
       <ul className="mx-auto flex max-w-lg">
@@ -23,7 +25,7 @@ export function BottomNav() {
                 ].join(" ")
               }
             >
-              {label}
+              {t(label)}
             </NavLink>
           </li>
         ))}

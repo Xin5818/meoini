@@ -2,10 +2,12 @@ import { useEffect, useState, type FormEvent } from "react";
 import type { Session } from "@supabase/supabase-js";
 import { getAuthRedirectUrl, supabase } from "./supabaseClient";
 import { withTimeout } from "../../utils/withTimeout";
+import { useI18n } from "../../i18n/I18nProvider";
 
 type FormMode = "sign_in" | "sign_up";
 
 export function AuthPanel() {
+  const { t } = useI18n();
   const [session, setSession] = useState<Session | null>(null);
   const [checkingSession, setCheckingSession] = useState(Boolean(supabase));
   const [mode, setMode] = useState<FormMode>("sign_in");
@@ -117,49 +119,49 @@ export function AuthPanel() {
 
   return (
     <section className="rounded-2xl border border-slate-200 bg-white p-4">
-      <h2 className="text-sm font-semibold text-slate-800">账号</h2>
+      <h2 className="text-sm font-semibold text-slate-800">{t("账号")}</h2>
       {!supabase ? (
         <p className="mt-2 text-sm text-amber-800">
-          尚未配置 Supabase。按项目根目录的 <code>.env.example</code> 设置项目 URL 和 Publishable Key 后，重新构建部署即可启用登录。
+          {t("尚未配置 Supabase。按项目根目录的 ")}<code>.env.example</code>{t(" 设置项目 URL 和 Publishable Key 后，重新构建部署即可启用登录。")}
         </p>
       ) : checkingSession ? (
-        <p className="mt-2 text-sm text-slate-500" role="status">正在恢复登录状态…</p>
+        <p className="mt-2 text-sm text-slate-500" role="status">{t("正在恢复登录状态…")}</p>
       ) : session ? (
         <div className="mt-3">
-          <p className="text-sm text-slate-700">已登录：{session.user.email ?? session.user.id}</p>
+          <p className="text-sm text-slate-700">{t("已登录：")}{session.user.email ?? session.user.id}</p>
           <button
             type="button"
             onClick={() => void handleSignOut()}
             disabled={busy}
             className="mt-3 rounded-xl border border-slate-300 px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50 disabled:opacity-50"
           >
-            {busy ? "处理中…" : "退出登录"}
+            {busy ? t("处理中…") : t("退出登录")}
           </button>
         </div>
       ) : (
         <>
           <div className="mt-3 grid grid-cols-2 gap-2 rounded-xl bg-slate-100 p-1">
-            <button type="button" onClick={() => { setMode("sign_in"); setMessage(""); setError(""); }} className={`rounded-lg py-2 text-sm ${mode === "sign_in" ? "bg-white font-semibold text-brand-800 shadow-sm" : "text-slate-600"}`}>登录</button>
-            <button type="button" onClick={() => { setMode("sign_up"); setMessage(""); setError(""); }} className={`rounded-lg py-2 text-sm ${mode === "sign_up" ? "bg-white font-semibold text-brand-800 shadow-sm" : "text-slate-600"}`}>注册</button>
+            <button type="button" onClick={() => { setMode("sign_in"); setMessage(""); setError(""); }} className={`rounded-lg py-2 text-sm ${mode === "sign_in" ? "bg-white font-semibold text-brand-800 shadow-sm" : "text-slate-600"}`}>{t("登录")}</button>
+            <button type="button" onClick={() => { setMode("sign_up"); setMessage(""); setError(""); }} className={`rounded-lg py-2 text-sm ${mode === "sign_up" ? "bg-white font-semibold text-brand-800 shadow-sm" : "text-slate-600"}`}>{t("注册")}</button>
           </div>
           <form className="mt-3 space-y-3" onSubmit={(event) => void handleSubmit(event)}>
             <label className="block text-sm">
-              <span className="text-slate-600">邮箱</span>
+              <span className="text-slate-600">{t("邮箱")}</span>
               <input type="email" autoComplete="email" required value={email} onChange={(event) => setEmail(event.target.value)} className="mt-1 w-full rounded-lg border border-slate-200 px-3 py-2 outline-none focus:ring-2 focus:ring-brand-600" />
             </label>
             <label className="block text-sm">
-              <span className="text-slate-600">密码</span>
+              <span className="text-slate-600">{t("密码")}</span>
               <input type="password" autoComplete={mode === "sign_up" ? "new-password" : "current-password"} minLength={6} required value={password} onChange={(event) => setPassword(event.target.value)} className="mt-1 w-full rounded-lg border border-slate-200 px-3 py-2 outline-none focus:ring-2 focus:ring-brand-600" />
             </label>
             <button type="submit" disabled={busy} className="w-full rounded-xl bg-brand-700 py-2.5 text-sm font-semibold text-white disabled:opacity-50">
-              {busy ? "请稍候…" : mode === "sign_up" ? "创建账号" : "登录"}
+              {busy ? t("请稍候…") : mode === "sign_up" ? t("创建账号") : t("登录")}
             </button>
           </form>
         </>
       )}
-      {message && <p className="mt-3 text-sm text-brand-800" role="status">{message}</p>}
-      {error && <p className="mt-3 text-sm text-red-700" role="alert">{error}</p>}
-      {sessionRestoreFailed && <button type="button" onClick={() => setSessionRetry((retry) => retry + 1)} className="mt-2 text-sm font-medium text-brand-700 underline">重试恢复登录状态</button>}
+      {message && <p className="mt-3 text-sm text-brand-800" role="status">{t(message)}</p>}
+      {error && <p className="mt-3 text-sm text-red-700" role="alert">{t(error)}</p>}
+      {sessionRestoreFailed && <button type="button" onClick={() => setSessionRetry((retry) => retry + 1)} className="mt-2 text-sm font-medium text-brand-700 underline">{t("重试恢复登录状态")}</button>}
     </section>
   );
 }

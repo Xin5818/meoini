@@ -1,5 +1,6 @@
-import { db, saveFlashcard } from "../../db/database";
+import { db, saveFlashcard } from "../../db/database.ts";
 import type { Flashcard } from "../../types/word";
+import { DEFAULT_DECK_ID } from "../../types/deck.ts";
 
 const CSV_HEADERS = [
   "id",
@@ -21,6 +22,13 @@ const CSV_HEADERS = [
   "lastReviewedAt",
   "lastReviewMode",
   "earlyReviewCount",
+  "deckId",
+  "cardType",
+  "front",
+  "back",
+  "notes",
+  "audioUrl",
+  "imageUrl",
 ] as const;
 
 function escapeCsvField(value: string): string {
@@ -30,49 +38,39 @@ function escapeCsvField(value: string): string {
   return value;
 }
 
-function parseCsvLine(line: string): string[] {
-  const fields: string[] = [];
-  let current = "";
-  let inQuotes = false;
-
-  for (let i = 0; i < line.length; i++) {
-    const ch = line[i];
-    if (inQuotes) {
-      if (ch === '"') {
-        if (line[i + 1] === '"') {
-          current += '"';
-          i++;
-        } else {
-          inQuotes = false;
-        }
-      } else {
-        current += ch;
-      }
-    } else if (ch === '"') {
-      inQuotes = true;
-    } else if (ch === ",") {
-      fields.push(current);
-      current = "";
-    } else {
-      current += ch;
-    }
-  }
-  fields.push(current);
-  return fields;
-}
-
 function parseCsv(text: string): string[][] {
-  const lines = text.replace(/^\uFEFF/, "").split(/\r?\n/);
+  const source = text.replace(/^\uFEFF/, "");
   const rows: string[][] = [];
-  for (const line of lines) {
-    if (!line.trim()) continue;
-    rows.push(parseCsvLine(line));
+  let row: string[] = [];
+  let field = "";
+  let inQuotes = false;
+  for (let index = 0; index < source.length; index++) {
+    const char = source[index];
+    if (inQuotes) {
+      if (char === '"' && source[index + 1] === '"') {
+        field += '"';
+        index++;
+      } else if (char === '"') inQuotes = false;
+      else field += char;
+    } else if (char === '"') inQuotes = true;
+    else if (char === ",") {
+      row.push(field);
+      field = "";
+    } else if (char === "\n" || char === "\r") {
+      if (char === "\r" && source[index + 1] === "\n") index++;
+      row.push(field);
+      if (row.some((value) => value.trim())) rows.push(row);
+      row = [];
+      field = "";
+    } else field += char;
   }
+  row.push(field);
+  if (row.some((value) => value.trim())) rows.push(row);
   return rows;
 }
 
-export async function exportFlashcardsToCsv(): Promise<string> {
-  const cards = await db.flashcards.toArray();
+export async function exportFlashcardsToCsv(deckId?: string): Promise<string> {
+  const cards = deckId ? await db.flashcards.where("deckId").equals(deckId).toArray() : await db.flashcards.toArray();
   const header = CSV_HEADERS.join(",");
   const lines = cards.map((card) =>
     [
@@ -95,6 +93,13 @@ export async function exportFlashcardsToCsv(): Promise<string> {
       String(card.lastReviewedAt ?? ""),
       card.lastReviewMode ?? "",
       String(card.earlyReviewCount ?? ""),
+      card.deckId ?? DEFAULT_DECK_ID,
+      card.cardType ?? "dictionary",
+      card.front ?? "",
+      card.back ?? "",
+      card.notes ?? "",
+      card.audioUrl ?? "",
+      card.imageUrl ?? "",
     ]
       .map(escapeCsvField)
       .join(","),
@@ -112,9 +117,12 @@ export function downloadTextFile(filename: string, content: string, mime: string
   URL.revokeObjectURL(url);
 }
 
-export async function importFlashcardsFromCsv(text: string): Promise<number> {
-  const cards = parseFlashcardsFromCsv(text);
-  for (const card of cards) await saveFlashcard(card);
+export async function importFlashcardsFromCsv(text: string, targetDeckId?: string): Promise<number> {
+  const cards = parseFlashcardsFromCsv(text).map((card) => ({ ...card, deckId: targetDeckId ?? card.deckId ?? DEFAULT_DECK_ID }));
+  for (const card of cards) {
+    const existing = await db.flashcards.get(card.id);
+    await saveFlashcard(existing && existing.deckId !== card.deckId ? { ...card, id: crypto.randomUUID() } : card);
+  }
   return cards.length;
 }
 
@@ -149,7 +157,10 @@ function rowToFlashcard(
 
   const word = get("word", 0);
   const meaning = get("meaning", 2);
-  if (!word || !meaning) return null;
+  const cardType = get("cardType", 20) === "custom" ? "custom" : "dictionary";
+  const front = get("front", 21) || undefined;
+  const back = get("back", 22) || undefined;
+  if (cardType === "custom" ? !front || !back : !word || !meaning) return null;
 
   const now = Date.now();
   const id = get("id", 0) || crypto.randomUUID();
@@ -186,6 +197,12 @@ function rowToFlashcard(
 
   return {
     id,
+    cardType,
+    front,
+    back,
+    notes: get("notes", 23) || undefined,
+    audioUrl: get("audioUrl", 24) || undefined,
+    imageUrl: get("imageUrl", 25) || undefined,
     word,
     language,
     meaning,
@@ -199,6 +216,7 @@ function rowToFlashcard(
     lastReviewedAt: Number(get("lastReviewedAt", 16)) || undefined,
     lastReviewMode,
     earlyReviewCount: Number(get("earlyReviewCount", 18)) || undefined,
+    deckId: get("deckId", 19) || DEFAULT_DECK_ID,
     tags,
     createdAt,
     dueAt,

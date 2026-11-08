@@ -3,20 +3,22 @@ import type { Flashcard } from "../../types/word";
 import { createFlashcard } from "../flashcards/review";
 import { searchDictionaryExact } from "../dictionary/dictionaryService";
 import { lookupAndPersistFlashcard } from "./lookupFlashcard";
+import { DEFAULT_DECK_ID } from "../../types/deck";
 export { parseWordList, parseWordListDetailed } from "./wordListParser";
 
-export async function getExistingWordKeys(language: string): Promise<Set<string>> {
+export async function getExistingWordKeys(language: string, deckId?: string): Promise<Set<string>> {
   const cards = await db.flashcards.where("language").equals(language).toArray();
-  return new Set(cards.map((card) => card.word.normalize("NFC").toLocaleLowerCase()));
+  return new Set(cards.filter((card) => !deckId || card.deckId === deckId).map((card) => card.word.normalize("NFC").toLocaleLowerCase()));
 }
 
 export async function importWordsAsFlashcards(
   words: string[],
   language: string,
+  deckId = DEFAULT_DECK_ID,
 ): Promise<{ imported: number; existing: number; cards: Flashcard[] }> {
   return db.transaction("rw", db.flashcards, async () => {
     const cards = await db.flashcards.where("language").equals(language).toArray();
-    const seen = new Set(cards.map((card) => card.word.normalize("NFC").toLocaleLowerCase()));
+    const seen = new Set(cards.filter((card) => card.deckId === deckId).map((card) => card.word.normalize("NFC").toLocaleLowerCase()));
     const additions: Flashcard[] = [];
     let existing = 0;
     for (const word of words) {
@@ -26,7 +28,7 @@ export async function importWordsAsFlashcards(
         continue;
       }
       seen.add(key);
-      additions.push({ ...createFlashcard({ word, language, meaning: "" }), lookupStatus: "pending" });
+      additions.push({ ...createFlashcard({ word, language, meaning: "", deckId }), lookupStatus: "pending" });
     }
     if (additions.length) await db.flashcards.bulkAdd(additions);
     return { imported: additions.length, existing, cards: additions };

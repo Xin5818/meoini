@@ -1,4 +1,5 @@
 import type { Flashcard, ReviewRating } from "../../types/word";
+import { DEFAULT_DECK_ID } from "../../types/deck.ts";
 
 const HOUR = 60 * 60 * 1000;
 const DAY = 24 * HOUR;
@@ -52,10 +53,13 @@ export function createFlashcard(input: {
   meaning: string;
   example?: string;
   tags?: string[];
+  deckId?: string;
 }): Flashcard {
   const now = Date.now();
   return {
     id: crypto.randomUUID(),
+    deckId: input.deckId ?? DEFAULT_DECK_ID,
+    cardType: "dictionary",
     word: input.word.trim(),
     language: input.language,
     meaning: input.meaning.trim(),
@@ -66,4 +70,41 @@ export function createFlashcard(input: {
     intervalDays: 0,
     repetitions: 0,
   };
+}
+
+export function createCustomFlashcard(input: {
+  front: string;
+  back: string;
+  notes?: string;
+  audioUrl?: string;
+  imageUrl?: string;
+  deckId: string;
+}): Flashcard {
+  const now = Date.now();
+  return {
+    id: crypto.randomUUID(),
+    deckId: input.deckId,
+    cardType: "custom",
+    front: input.front.trim(),
+    back: input.back.trim(),
+    notes: input.notes?.trim() || undefined,
+    audioUrl: input.audioUrl?.trim() || undefined,
+    imageUrl: input.imageUrl?.trim() || undefined,
+    word: "",
+    language: "custom",
+    meaning: "",
+    tags: [],
+    createdAt: now,
+    dueAt: now,
+    intervalDays: 0,
+    repetitions: 0,
+  };
+}
+
+export function getFlashcardFront(card: Flashcard): string {
+  return card.cardType === "custom" ? card.front ?? "" : card.word;
+}
+
+export function getFlashcardBack(card: Flashcard): string {
+  return card.cardType === "custom" ? card.back ?? "" : card.meaning;
 }

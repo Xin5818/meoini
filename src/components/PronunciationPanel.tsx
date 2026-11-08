@@ -6,6 +6,7 @@ import {
 import { getFinnishPronunciationGuidance } from "../features/dictionary/pronunciationGuidance";
 import { getUniqueIpaSources, shouldShowPronunciationPlaybackMessage } from "../features/dictionary/pronunciationDisplay";
 import type { Pronunciation } from "../types/word";
+import { useI18n } from "../i18n/I18nProvider";
 
 interface PronunciationPanelProps {
   word: string;
@@ -26,6 +27,7 @@ export function PronunciationPanel({
   pronunciations = [],
   autoPlayOnMount = false,
 }: PronunciationPanelProps) {
+  const { t } = useI18n();
   const cancelPlayback = useRef<(() => void) | undefined>(undefined);
   const guidanceCloseTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
   const guidanceTriggerRef = useRef<HTMLButtonElement | null>(null);
@@ -50,7 +52,7 @@ export function PronunciationPanel({
     ...(ipa && ipaSource ? [{ source: ipaSource, sourceUrl: undefined }] : []),
   ]);
   const ipaSources = ipaValues.length && uniqueIpaSources.length === 0
-    ? [{ source: "词典", sourceUrl: "https://en.wiktionary.org/" }]
+    ? [{ source: t("词典"), sourceUrl: "https://en.wiktionary.org/" }]
     : uniqueIpaSources;
   const audioSources = [...new Map(records.filter((record) => record.audioSourceUrl)
     .map((record) => {
@@ -137,14 +139,14 @@ export function PronunciationPanel({
   if (!showPanel) return null;
 
   return (
-    <section className="w-fit max-w-full rounded-xl bg-slate-50 p-3" aria-label="发音与音标">
+    <section className="w-fit max-w-full rounded-xl bg-slate-50 p-3" aria-label={t("发音与音标")}>
       <div className="flex flex-wrap items-center gap-3">
         <button
           type="button"
           onClick={playPronunciation}
           className="inline-flex items-center justify-center rounded-lg border border-brand-600 bg-white p-2 text-brand-800 hover:bg-brand-50"
-          aria-label={speaking ? "停止播放发音" : "播放发音"}
-          title={speaking ? "停止播放发音" : "播放发音"}
+          aria-label={t(speaking ? "停止播放发音" : "播放发音")}
+          title={t(speaking ? "停止播放发音" : "播放发音")}
         >
           <SpeakerIcon />
         </button>
@@ -154,10 +156,10 @@ export function PronunciationPanel({
               <span key={`${value}-${index}`} className="font-mono text-base text-slate-900">{value}</span>
             ))}
           </div>
-        ) : <p className="text-sm text-slate-500">暂无音标</p>}
+        ) : <p className="text-sm text-slate-500">{t("暂无音标")}</p>}
         {records.find((record) => record.syllabification)?.syllabification && (
           <p className="text-sm text-slate-600">
-            音节：{records.find((record) => record.syllabification)?.syllabification}
+            {t("音节：")} {records.find((record) => record.syllabification)?.syllabification}
           </p>
         )}
         {isFinnish && hasGuidance && (
@@ -170,10 +172,10 @@ export function PronunciationPanel({
             <button
               ref={guidanceTriggerRef}
               type="button"
-              aria-label="查看发音提示"
+              aria-label={t("查看发音提示")}
               aria-expanded={guidanceExpanded}
               aria-controls={guidanceId}
-              title="发音提示"
+              title={t("发音提示")}
               onClick={(event) => {
                 event.stopPropagation();
                 setGuidanceExpanded((expanded) => !expanded);
@@ -190,7 +192,7 @@ export function PronunciationPanel({
               <div
                 id={guidanceId}
                 role="dialog"
-                aria-label={`${word} 发音提示`}
+                aria-label={`${word} ${t("发音提示")}`}
                 onClick={(event) => event.stopPropagation()}
                 onMouseEnter={keepGuidanceOpen}
                 onMouseLeave={scheduleGuidanceClose}
@@ -200,13 +202,13 @@ export function PronunciationPanel({
               >
                 <ol className="list-decimal space-y-2 pl-5">
                   <li>
-                    {guidance.stress.text}
-                    <SourceLink href={guidance.stress.sourceUrl}>{guidance.stress.source}</SourceLink>
+                    {t(guidance.stress.text)}
+                    <SourceLink href={guidance.stress.sourceUrl}>{t(guidance.stress.source)}</SourceLink>
                   </li>
                   {guidance.tips.map((tip) => (
                     <li key={tip.text}>
-                      {tip.text}
-                      <SourceLink href={tip.sourceUrl}>{tip.source}</SourceLink>
+                      {t(tip.text)}
+                      <SourceLink href={tip.sourceUrl}>{t(tip.source)}</SourceLink>
                     </li>
                   ))}
                 </ol>
@@ -218,19 +220,19 @@ export function PronunciationPanel({
 
       {shouldShowPronunciationPlaybackMessage(playback?.status) && playback && (
         <p className="mt-2 text-xs text-slate-600" role="status" aria-live="polite">
-          {playback.message}
+          {t(playback.message)}
         </p>
       )}
 
       <div className="flex flex-wrap gap-x-3 text-xs text-slate-500">
         {ipaSources.map((source) => (
           <span key={`ipa-${source.source?.toLocaleLowerCase()}`}>
-            IPA 来源：<SourceLink href={source.sourceUrl ?? "https://en.wiktionary.org/"}>{source.source ?? "词典"}</SourceLink>
+            {t("IPA 来源：")}<SourceLink href={source.sourceUrl ?? "https://en.wiktionary.org/"}>{source.source ?? t("词典")}</SourceLink>
           </span>
         ))}
         {audioSources.map((source) => (
           <span key={`audio-${source.source.toLocaleLowerCase()}`}>
-            音频来源：<SourceLink href={source.sourceUrl}>{source.source}</SourceLink>
+            {t("音频来源：")}<SourceLink href={source.sourceUrl}>{source.source}</SourceLink>
           </span>
         ))}
       </div>

@@ -7,6 +7,7 @@ import {
   type KeyboardEvent,
 } from "react";
 import type { DictionarySuggestion } from "../features/dictionary/dictionarySearch";
+import { useI18n } from "../i18n/I18nProvider";
 
 interface SearchBarProps {
   query: string;
@@ -25,8 +26,9 @@ export function SearchBar({
   loading,
   suggestions = [],
   suggestionsLoading,
-  placeholder = "输入单词…",
+  placeholder,
 }: SearchBarProps) {
+  const { t } = useI18n();
   const listId = useId();
   const rootRef = useRef<HTMLDivElement>(null);
   const [open, setOpen] = useState(false);
@@ -91,7 +93,7 @@ export function SearchBar({
           }}
           onFocus={() => setOpen(true)}
           onKeyDown={handleKeyDown}
-          placeholder={placeholder}
+          placeholder={placeholder ?? t("输入单词…")}
           role="combobox"
           aria-expanded={showList}
           aria-controls={listId}
@@ -105,7 +107,7 @@ export function SearchBar({
           disabled={loading || !query.trim()}
           className="rounded-xl bg-brand-700 px-5 py-3 text-sm font-semibold text-white shadow-sm disabled:opacity-50"
         >
-          {loading ? "查询中…" : "搜索"}
+          {loading ? t("查询中…") : t("搜索")}
         </button>
       </form>
 
@@ -116,7 +118,7 @@ export function SearchBar({
           className="absolute z-20 mt-1 max-h-72 w-full overflow-y-auto rounded-xl border border-slate-200 bg-white py-1 shadow-lg"
         >
           {suggestionsLoading && matchingSuggestions.length === 0 && (
-            <li className="px-4 py-2 text-sm text-slate-400">联想中…</li>
+            <li className="px-4 py-2 text-sm text-slate-400">{t("联想中…")}</li>
           )}
           {matchingSuggestions.map((item, index) => (
             <li key={item.word} role="option" aria-selected={index === activeIndex}>

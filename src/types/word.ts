@@ -61,6 +61,13 @@ export interface Pronunciation {
 
 export interface Flashcard {
   id: string;
+  deckId: string;
+  cardType: "dictionary" | "custom";
+  front?: string;
+  back?: string;
+  notes?: string;
+  audioUrl?: string;
+  imageUrl?: string;
   word: string;
   language: string;
   meaning: string;

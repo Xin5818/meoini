@@ -1,11 +1,13 @@
 import { BrowserRouter } from "react-router-dom";
 import { BottomNav } from "../components/BottomNav";
 import { AppRoutes } from "./routes";
+import { ActiveDeckSelector } from "../components/ActiveDeckSelector";
 
 export default function App() {
   return (
     <BrowserRouter basename={import.meta.env.BASE_URL}>
       <div className="mx-auto flex min-h-full max-w-lg flex-col px-4 pb-24 pt-6">
+        <ActiveDeckSelector />
         <AppRoutes />
       </div>
       <BottomNav />

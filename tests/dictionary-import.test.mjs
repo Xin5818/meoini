@@ -9,8 +9,64 @@ import { countFallbackFound, getDictionaryLookupPercent, getDictionaryLookupStat
 import { getVisibleReviewItems } from "../src/features/flashcards/reviewDisplay.ts";
 import { getUniqueIpaSources, shouldShowPronunciationPlaybackMessage } from "../src/features/dictionary/pronunciationDisplay.ts";
 import { getFinnishPronunciationGuidance } from "../src/features/dictionary/pronunciationGuidance.ts";
-import { applyReview } from "../src/features/flashcards/review.ts";
+import { applyReview, createCustomFlashcard, getFlashcardBack, getFlashcardFront } from "../src/features/flashcards/review.ts";
 import { applyEarlyPractice, getEarlyReviewCards, getEarlyReviewDiagnostics, getReviewPlanStats, limitEarlyReviewCards } from "../src/features/flashcards/reviewPlan.ts";
+import { getInitialInterfaceLanguage, INTERFACE_LANGUAGE_KEY, saveInterfaceLanguage, translateMessage, translatePlural } from "../src/i18n/messages.ts";
+
+test("interface language prefers a saved choice and otherwise detects Chinese or defaults to English", () => {
+  assert.equal(getInitialInterfaceLanguage("en", "zh-CN"), "en");
+  assert.equal(getInitialInterfaceLanguage("zh-CN", "en-US"), "zh-CN");
+  assert.equal(getInitialInterfaceLanguage(null, "zh-TW"), "zh-CN");
+  assert.equal(getInitialInterfaceLanguage(null, "fi-FI"), "en");
+});
+
+test("interface language preference is persisted separately and translations interpolate values", () => {
+  const values = new Map();
+  const storage = { setItem: (key, value) => values.set(key, value) };
+  saveInterfaceLanguage(storage, "en");
+  assert.equal(values.get(INTERFACE_LANGUAGE_KEY), "en");
+  assert.equal(translateMessage("en", "共 {{count}} 张闪卡", { count: 3 }), "3 flashcards");
+  assert.equal(translateMessage("zh-CN", "共 {{count}} 张闪卡", { count: 3 }), "共 3 张闪卡");
+  assert.equal(translatePlural("en", "{{count}} card", "{{count}} cards", 1), "1 card");
+  assert.equal(translatePlural("en", "{{count}} card", "{{count}} cards", 2), "2 cards");
+});
+
+test("version 1 databases migrate all existing flashcards into the default deck without changing review data", async () => {
+  await import("fake-indexeddb/auto");
+  const { default: Dexie } = await import("dexie");
+  const { MeoiniDatabase } = await import("../src/db/database.ts");
+  const name = `meoini-migration-${Date.now()}-${Math.random()}`;
+  const legacy = new Dexie(name);
+  legacy.version(1).stores({ flashcards: "id, word, language, dueAt, createdAt" });
+  await legacy.open();
+  await legacy.table("flashcards").put({ ...baseCard, id: "legacy-card", dueAt: 1234, intervalDays: 9, repetitions: 4, lastReviewedAt: 900 });
+  legacy.close();
+
+  const migrated = new MeoiniDatabase(name);
+  try {
+    await migrated.open();
+    const card = await migrated.flashcards.get("legacy-card");
+    assert.equal(card.deckId, "default");
+    assert.equal(card.dueAt, 1234);
+    assert.equal(card.intervalDays, 9);
+    assert.equal(card.repetitions, 4);
+    assert.equal(card.lastReviewedAt, 900);
+    assert.equal(card.cardType, "dictionary");
+    assert.equal((await migrated.decks.get("default")).name, "默认闪卡库");
+  } finally {
+    migrated.close();
+    await Dexie.delete(name);
+  }
+});
+
+test("JSON flashcard import parser accepts exported payloads and supplies a default deck for old cards", () => {
+  return import("../src/features/import-export/json.ts").then(({ parseFlashcardsFromJson }) => {
+  const cards = parseFlashcardsFromJson(JSON.stringify({ flashcards: [{ word: "kiitos", language: "fi", meaning: "thank you" }] }));
+  assert.equal(cards.length, 1);
+  assert.equal(cards[0].deckId, "default");
+  assert.equal(cards[0].word, "kiitos");
+  });
+});
 
 globalThis.DOMParser ??= class {
   parseFromString(html) {
@@ -638,4 +694,85 @@ test("nukkua examples and translations persist in Dexie for offline review", asy
   assert.equal(saved.dictionaryEntry.examples[0].formOf, "nukkua");
   assert.equal(saved.dictionaryEntry.examples[0].grammaticalForm, "illative of third active infinitive");
   await db.delete();
+});
+
+test("deck-scoped card reads, due counts, moves, and delete choices stay isolated", async () => {
+  await import("fake-indexeddb/auto");
+  const { db, getFlashcardsByDeck, countDueFlashcards, moveFlashcardToDeck, deleteDeck } = await import("../src/db/database.ts");
+  if (!db.isOpen()) await db.open();
+  const now = Date.now();
+  const sourceDeck = { id: "test-source", name: "Source", description: "", language: "fi", icon: "A", color: "#111111", createdAt: now, updatedAt: now };
+  const targetDeck = { ...sourceDeck, id: "test-target", name: "Target" };
+  await db.decks.bulkPut([sourceDeck, targetDeck]);
+  const sourceCard = { ...baseCard, id: "deck-card-source", deckId: sourceDeck.id, dueAt: now - 1 };
+  const targetCard = { ...baseCard, id: "deck-card-target", deckId: targetDeck.id, word: "kiitos", dueAt: now - 1 };
+  await db.flashcards.bulkPut([sourceCard, targetCard]);
+  try {
+    const { importFlashcardsFromCsv } = await import("../src/features/import-export/csv.ts");
+    const { importFlashcardsFromJson } = await import("../src/features/import-export/json.ts");
+    await importFlashcardsFromCsv(`id,word,language,meaning,deckId\n${sourceCard.id},terve,fi,hello,default`, targetDeck.id);
+    await importFlashcardsFromJson(JSON.stringify({ flashcards: [{ id: "deck-json-import", word: "kiitos", language: "fi", meaning: "thank you" }] }), targetDeck.id);
+    assert.equal((await db.flashcards.get(sourceCard.id)).deckId, sourceDeck.id);
+    assert.equal((await db.flashcards.where("word").equals("terve").first()).deckId, targetDeck.id);
+    assert.equal((await db.flashcards.get("deck-json-import")).deckId, targetDeck.id);
+    assert.deepEqual((await getFlashcardsByDeck(sourceDeck.id)).map((card) => card.id), [sourceCard.id]);
+    assert.equal(await countDueFlashcards(now, sourceDeck.id), 1);
+    await moveFlashcardToDeck(sourceCard.id, targetDeck.id);
+    assert.equal((await getFlashcardsByDeck(sourceDeck.id)).length, 0);
+    assert.equal((await getFlashcardsByDeck(targetDeck.id)).length, 4);
+    await deleteDeck(targetDeck.id, "move-to-default");
+    assert.equal((await db.flashcards.get(sourceCard.id)).deckId, "default");
+    assert.equal((await db.flashcards.get(targetCard.id)).deckId, "default");
+    const deleteDeckRecord = { ...sourceDeck, id: "test-delete" };
+    await db.decks.put(deleteDeckRecord);
+    await db.flashcards.put({ ...sourceCard, id: "delete-this-card", deckId: deleteDeckRecord.id });
+    await deleteDeck(deleteDeckRecord.id, "delete-cards");
+    assert.equal(await db.flashcards.get("delete-this-card"), undefined);
+  } finally {
+    await db.flashcards.bulkDelete([sourceCard.id, targetCard.id, "deck-json-import", "delete-this-card", ...(await db.flashcards.where("word").equals("terve").primaryKeys())]);
+    await db.decks.bulkDelete([sourceDeck.id, targetDeck.id, "test-delete"]);
+  }
+});
+
+test("custom flashcards keep multiline front, back, notes and scheduling through Dexie and export formats", async () => {
+  await import("fake-indexeddb/auto");
+  const { db, saveFlashcard } = await import("../src/db/database.ts");
+  const { exportFlashcardsToCsv, parseFlashcardsFromCsv } = await import("../src/features/import-export/csv.ts");
+  const { parseFlashcardsFromJson } = await import("../src/features/import-export/json.ts");
+  if (!db.isOpen()) await db.open();
+  const card = createCustomFlashcard({
+    front: 'Mitä tarkoittaa "Menen nukkumaan"?\nExplain the phrase.',
+    back: "我要去睡觉了。\nI am going to bed.",
+    notes: "nukkumaan is an inflected form.",
+    audioUrl: "https://example.test/audio.mp3",
+    imageUrl: "https://example.test/image.png",
+    deckId: "custom-test-deck",
+  });
+  const deck = { id: card.deckId, name: "Custom test", description: "", language: "fi", icon: "brain", color: "#2563eb", createdAt: Date.now(), updatedAt: Date.now() };
+  await db.decks.put(deck);
+  await saveFlashcard(card);
+  try {
+    const stored = await db.flashcards.get(card.id);
+    assert.equal(stored.cardType, "custom");
+    assert.equal(stored.word, "");
+    assert.equal(stored.meaning, "");
+    assert.equal(getFlashcardFront(stored), card.front);
+    assert.equal(getFlashcardBack(stored), card.back);
+    assert.equal((await db.decks.get(deck.id)).icon, "brain");
+    const csv = parseFlashcardsFromCsv(await exportFlashcardsToCsv(deck.id))[0];
+    assert.equal(csv.front, card.front);
+    assert.equal(csv.back, card.back);
+    assert.equal(csv.notes, card.notes);
+    assert.equal(csv.deckId, deck.id);
+    const json = parseFlashcardsFromJson(JSON.stringify({ flashcards: [stored] }))[0];
+    assert.equal(json.cardType, "custom");
+    assert.equal(json.audioUrl, card.audioUrl);
+    const reviewed = applyReview(stored, "good", Date.now());
+    assert.equal(reviewed.repetitions, 1);
+    assert.equal(reviewed.front, stored.front);
+    assert.equal(reviewed.back, stored.back);
+  } finally {
+    await db.flashcards.delete(card.id);
+    await db.decks.delete(deck.id);
+  }
 });
