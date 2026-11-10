@@ -1,6 +1,7 @@
 # Meoini
 
 A Finnish and English dictionary with flashcards, spaced review, pronunciation support, and offline access.
+https://xin5818.github.io/meoini/
 
 ## Current status
 
