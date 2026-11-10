@@ -107,13 +107,13 @@ export function DictionaryLookupProgress({ deckId }: { deckId?: string }) {
   }
 
   return (
-      <section className="rounded-2xl border border-slate-200 bg-white p-4" aria-label={t("词典查询进度")}>
+      <section className="rounded-2xl border border-border bg-surface p-4" aria-label={t("词典查询进度")}>
       <div className="flex flex-wrap items-baseline justify-between gap-2">
-        <h2 className="text-sm font-semibold text-slate-800">{t("释义查询统计（本地词库）")}</h2>
-        <span className="text-sm font-semibold text-slate-700">{percent}%</span>
+        <h2 className="text-sm font-semibold text-text">{t("释义查询统计（本地词库）")}</h2>
+        <span className="text-sm font-semibold text-text">{percent}%</span>
       </div>
-      <div className="mt-2 h-2 overflow-hidden rounded-full bg-slate-100" role="progressbar" aria-valuemin={0} aria-valuemax={100} aria-valuenow={percent} aria-label={t("查询完成 {{percent}}%", { percent })}>
-        <div className="h-full rounded-full bg-brand-600 transition-all" style={{ width: `${percent}%` }} />
+      <div className="mt-2 h-2 overflow-hidden rounded-full bg-surface-hover" role="progressbar" aria-valuemin={0} aria-valuemax={100} aria-valuenow={percent} aria-label={t("查询完成 {{percent}}%", { percent })}>
+        <div className="h-full rounded-full bg-primary-text transition-all" style={{ width: `${percent}%` }} />
       </div>
       <dl className="mt-3 grid grid-cols-2 gap-2 text-xs sm:grid-cols-3 lg:grid-cols-6">
         <Stat label={t("总数")} value={stats.total} />
@@ -131,11 +131,11 @@ export function DictionaryLookupProgress({ deckId }: { deckId?: string }) {
         <RetryButton label={t("重试未查到 ({{count}})", { count: stats.notFound })} disabled={!stats.notFound || Boolean(running)} busy={running === "not_found"} onClick={() => void retry("not_found")} />
       </div>
 
-      {report && <p role="status" className="mt-2 text-xs text-brand-800">{report}</p>}
-      {error && <p role="alert" className="mt-2 text-xs text-red-700">{t(error)} <button type="button" disabled={refreshing} onClick={() => void refresh().catch(() => setError("读取本地词库状态失败或超时，请重试。"))} className="underline disabled:opacity-50">{t("重试")}</button></p>}
-      {stalledCards.length > 0 && <p className="mt-2 text-xs text-amber-800">{t("有 {{count}} 个单词查询超过 30 秒；超过 2 分钟会自动恢复为待查询。", { count: stalledCards.length })}</p>}
+      {report && <p role="status" className="mt-2 text-xs text-primary-text">{report}</p>}
+      {error && <p role="alert" className="mt-2 text-xs text-error">{t(error)} <button type="button" disabled={refreshing} onClick={() => void refresh().catch(() => setError("读取本地词库状态失败或超时，请重试。"))} className="underline disabled:opacity-50">{t("重试")}</button></p>}
+      {stalledCards.length > 0 && <p className="mt-2 text-xs text-warning">{t("有 {{count}} 个单词查询超过 30 秒；超过 2 分钟会自动恢复为待查询。", { count: stalledCards.length })}</p>}
       {(failedCards.length > 0 || notFoundCards.length > 0 || pendingCards.length > 0 || queryingCards.length > 0) && (
-        <details className="mt-3 text-xs text-slate-600">
+        <details className="mt-3 text-xs text-text-muted">
           <summary className="cursor-pointer">{t("查看待处理、查询中、失败与查无释义单词")}</summary>
           {pendingCards.length > 0 && <WordList title={t("待查询")} cards={pendingCards} t={t} />}
           {queryingCards.length > 0 && <QueryingList cards={queryingCards} t={t} />}
@@ -148,12 +148,12 @@ export function DictionaryLookupProgress({ deckId }: { deckId?: string }) {
 }
 
 function Stat({ label, value }: { label: string; value: number }) {
-  return <div className="rounded-lg bg-slate-50 px-3 py-2"><dt className="text-slate-500">{label}</dt><dd className="mt-0.5 text-base font-semibold text-slate-900">{value}</dd></div>;
+  return <div className="rounded-lg bg-surface-hover px-3 py-2"><dt className="text-text-muted">{label}</dt><dd className="mt-0.5 text-base font-semibold text-text">{value}</dd></div>;
 }
 
 function RetryButton({ label, disabled, busy, onClick }: { label: string; disabled: boolean; busy: boolean; onClick: () => void }) {
   const { t } = useI18n();
-  return <button type="button" disabled={disabled} onClick={onClick} className="rounded-lg border border-brand-600 px-3 py-1.5 text-xs font-semibold text-brand-800 disabled:cursor-not-allowed disabled:opacity-50">{busy ? t("处理中…") : label}</button>;
+  return <button type="button" disabled={disabled} onClick={onClick} className="rounded-lg border border-primary-text px-3 py-1.5 text-xs font-semibold text-primary-text disabled:cursor-not-allowed disabled:opacity-50">{busy ? t("处理中…") : label}</button>;
 }
 
 function WordList({ title, cards, t }: { title: string; cards: Flashcard[]; t: (message: string, values?: Record<string, string | number>) => string }) {
@@ -168,7 +168,7 @@ function QueryingList({ cards, t }: { cards: Flashcard[]; t: (message: string, v
 }
 
 function ReportList({ title, cards, onCopy, onDownload, t }: { title: string; cards: Flashcard[]; onCopy: () => void; onDownload: () => void; t: (message: string, values?: Record<string, string | number>) => string }) {
-  return <div className="mt-2"><div className="flex items-center gap-2"><h3 className="font-semibold">{t("{{title}}（{{count}}）", { title, count: cards.length })}</h3><button type="button" onClick={onCopy} className="text-brand-800 underline">{t("复制")}</button><button type="button" onClick={onDownload} className="text-brand-800 underline">{t("导出 TXT")}</button></div><ul className="mt-1 max-h-32 list-inside list-disc overflow-y-auto">{cards.map((card) => <li key={card.id}>{card.word}{card.lookupError ? ` — ${lookupErrorLabel(card.lookupError, t)}` : ""}</li>)}</ul></div>;
+  return <div className="mt-2"><div className="flex items-center gap-2"><h3 className="font-semibold">{t("{{title}}（{{count}}）", { title, count: cards.length })}</h3><button type="button" onClick={onCopy} className="text-primary-text underline">{t("复制")}</button><button type="button" onClick={onDownload} className="text-primary-text underline">{t("导出 TXT")}</button></div><ul className="mt-1 max-h-32 list-inside list-disc overflow-y-auto">{cards.map((card) => <li key={card.id}>{card.word}{card.lookupError ? ` — ${lookupErrorLabel(card.lookupError, t)}` : ""}</li>)}</ul></div>;
 }
 
 function lookupErrorLabel(error: string, t: (message: string, values?: Record<string, string | number>) => string): string {

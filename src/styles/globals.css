@@ -1,0 +1,62 @@
+
+/*
+ * Meoini 全局样式
+ * 颜色变量统一来自 ./themes.css
+ */
+
+@import "tailwindcss";
+@import "./themes.css";
+
+@theme {
+  --font-sans: "Segoe UI", system-ui, sans-serif;
+
+  /*
+   * 统一响应式断点：
+   *   Mobile  < 640px        （无前缀）
+   *   Tablet  640px – 1023px （sm / md）
+   *   Desktop 1024px 及以上  （lg）
+   *   Large   1440px 及以上  （2xl，覆盖 Tailwind 默认 1536px）
+   */
+  --breakpoint-2xl: 1440px;
+}
+
+html,
+body,
+#root {
+  min-height: 100%;
+}
+
+html {
+  background-color: var(--color-background);
+}
+
+body {
+  min-height: 100vh;
+  margin: 0;
+  color: var(--color-text);
+  background-color: var(--color-background);
+  background-image: var(--gradient-page);
+  background-repeat: no-repeat;
+  background-size: cover;
+  background-attachment: fixed;
+  /* 防止窄屏出现横向滚动条或内容溢出 */
+  overflow-x: hidden;
+  @apply antialiased;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  html {
+    scroll-behavior: smooth;
+  }
+}
+
+button,
+input,
+textarea,
+select {
+  font: inherit;
+}
+
+* {
+  box-sizing: border-box;
+}

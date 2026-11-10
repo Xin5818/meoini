@@ -1,0 +1,133 @@
+
+/*
+ * Meoini Design Tokens
+ * Green Mist · 绿色柔焦主题
+ * --------------------------------------------------
+ * 全站颜色统一在此文件管理。
+ *
+ * Light：柔白背景 + 淡绿色光晕
+ * Dark：深灰黑背景 + 柔和绿色光晕
+ *
+ * 切换方式：
+ * <html data-theme="dark">
+ *
+ * 修改全站颜色只需要编辑本文件。
+ */
+
+@theme {
+  /* ================================================
+     品牌颜色 Brand Colors
+     ================================================ */
+
+  /* 主色：柔和鼠尾草绿 */
+  --color-primary: #E7F0E7;
+  --color-primary-text: #426B50;
+  --color-primary-hover: #355C43;
+
+  /* 辅助色：浅灰绿 */
+  --color-secondary: #EEF3EE;
+  --color-secondary-text: #58745E;
+  --color-secondary-hover: #47634D;
+
+  /* ================================================
+     界面颜色 Interface Colors
+     ================================================ */
+
+  --color-background: #F8FAF7;
+  --color-surface: #FFFFFF;
+  --color-surface-hover: #F2F6F2;
+  --color-border: #E8EDE8;
+
+  /* ================================================
+     文字颜色 Text Colors
+     ================================================ */
+
+  --color-text: #303832;
+  --color-text-muted: #7C877E;
+  --color-text-inverse: #FFFFFF;
+
+  /* ================================================
+     状态颜色 Status Colors
+     ================================================ */
+
+  --color-success: #5D8C68;
+  --color-warning: #A87936;
+  --color-error: #B85C65;
+  --color-info: #64849A;
+
+  /* ================================================
+     其他颜色 Other Colors
+     ================================================ */
+
+  --color-icon: #718477;
+  --color-shadow: rgb(43 65 47 / 0.07);
+  --color-overlay: rgb(25 35 27 / 0.35);
+
+  /* ================================================
+     柔焦渐变 Page Gradient
+     ================================================ */
+
+  --gradient-page: radial-gradient(
+    ellipse at 15% 0%,
+    rgb(177 211 183 / 0.25),
+    transparent 45%
+  );
+}
+
+
+/* ================================================
+   Light Theme
+   默认浅色主题
+   ================================================ */
+
+:root {
+  color-scheme: light;
+}
+
+
+/* ================================================
+   Dark Theme
+   深色主题
+   ================================================ */
+
+:root[data-theme="dark"] {
+  color-scheme: dark;
+
+  /* 品牌颜色 */
+  --color-primary: #29382E;
+  --color-primary-text: #B7D4BD;
+  --color-primary-hover: #CBE1CF;
+
+  --color-secondary: #303A33;
+  --color-secondary-text: #A6C5AE;
+  --color-secondary-hover: #C0D9C5;
+
+  /* 界面颜色 */
+  --color-background: #202522;
+  --color-surface: #2B302D;
+  --color-surface-hover: #343B36;
+  --color-border: #3A433C;
+
+  /* 文字颜色 */
+  --color-text: #E5EBE6;
+  --color-text-muted: #A0AAA2;
+  --color-text-inverse: #202522;
+
+  /* 状态颜色 */
+  --color-success: #91C9A0;
+  --color-warning: #E4C27E;
+  --color-error: #E49A9E;
+  --color-info: #9ABBD5;
+
+  /* 其他颜色 */
+  --color-icon: #A6B4A9;
+  --color-shadow: rgb(0 0 0 / 0.30);
+  --color-overlay: rgb(0 0 0 / 0.60);
+
+  /* 深色柔焦渐变 */
+  --gradient-page: radial-gradient(
+    ellipse at 15% 0%,
+    rgb(83 126 92 / 0.18),
+    transparent 45%
+  );
+}

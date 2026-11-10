@@ -98,14 +98,14 @@ export function SearchBar({
           aria-expanded={showList}
           aria-controls={listId}
           aria-autocomplete="list"
-          className="min-w-0 flex-1 rounded-xl border border-slate-200 bg-white px-4 py-3 text-base shadow-sm outline-none ring-brand-600 focus:ring-2"
+          className="min-w-0 flex-1 rounded-xl border border-border bg-surface px-4 py-3 text-base shadow-sm outline-none ring-primary-text focus:ring-2"
           autoComplete="off"
           enterKeyHint="search"
         />
         <button
           type="submit"
           disabled={loading || !query.trim()}
-          className="rounded-xl bg-brand-700 px-5 py-3 text-sm font-semibold text-white shadow-sm disabled:opacity-50"
+          className="rounded-xl bg-primary-text px-5 py-3 text-sm font-semibold text-text-inverse shadow-sm disabled:opacity-50"
         >
           {loading ? t("查询中…") : t("搜索")}
         </button>
@@ -115,10 +115,10 @@ export function SearchBar({
         <ul
           id={listId}
           role="listbox"
-          className="absolute z-20 mt-1 max-h-72 w-full overflow-y-auto rounded-xl border border-slate-200 bg-white py-1 shadow-lg"
+          className="absolute z-20 mt-1 max-h-72 w-full overflow-y-auto rounded-xl border border-border bg-surface py-1 shadow-lg"
         >
           {suggestionsLoading && matchingSuggestions.length === 0 && (
-            <li className="px-4 py-2 text-sm text-slate-400">{t("联想中…")}</li>
+            <li className="px-4 py-2 text-sm text-text-muted/70">{t("联想中…")}</li>
           )}
           {matchingSuggestions.map((item, index) => (
             <li key={item.word} role="option" aria-selected={index === activeIndex}>
@@ -127,13 +127,13 @@ export function SearchBar({
                 onMouseDown={(e) => e.preventDefault()}
                 onClick={() => submitSearch(item.word)}
                 className={[
-                  "flex w-full flex-col items-start px-4 py-2.5 text-left hover:bg-brand-50",
-                  index === activeIndex ? "bg-brand-50" : "",
+                  "flex w-full flex-col items-start px-4 py-2.5 text-left hover:bg-primary",
+                  index === activeIndex ? "bg-primary" : "",
                 ].join(" ")}
               >
-                <span className="font-medium text-slate-900">{item.word}</span>
+                <span className="font-medium text-text">{item.word}</span>
                 {item.hint && (
-                  <span className="text-xs text-slate-500 line-clamp-1">{item.hint}</span>
+                  <span className="text-xs text-text-muted line-clamp-1">{item.hint}</span>
                 )}
               </button>
             </li>

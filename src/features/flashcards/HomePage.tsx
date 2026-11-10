@@ -218,26 +218,31 @@ export function HomePage() {
   return (
     <div className="space-y-6">
       <header>
-        <h1 className="text-2xl font-bold text-slate-900">Meoini</h1>
-        <p className="mt-1 text-sm text-slate-600">
+        <h1 className="text-2xl font-bold text-text">Meoini</h1>
+        <p className="mt-1 text-sm text-text-muted">
           {t("查词并保存为闪卡 · 词典语言：{{language}}", { language })}
         </p>
         {language === "en" && (
-          <p className="mt-1 text-xs text-amber-800">
+          <p className="mt-1 text-xs text-warning">
             {t("学习芬兰语请在「设置」中选择 Finnish (fi)。")}
           </p>
         )}
         {dueCount > 0 && (
           <Link
             to="/review"
-            className="mt-3 inline-flex items-center rounded-full bg-brand-100 px-3 py-1 text-sm font-medium text-brand-800"
+            className="mt-3 inline-flex items-center rounded-full bg-primary px-3 py-1 text-sm font-medium text-primary-text lg:hidden"
           >
             {t("今日待复习 {{count}} 张 →", { count: dueCount })}
           </Link>
         )}
       </header>
-      <DeckTargetSelector decks={decks} value={targetDeckId} onChange={changeTargetDeck} />
-      {metaError && <p role="status" className="text-xs text-amber-800">{t(metaError)}</p>}
+
+      {/* 桌面端：左侧内容 + 右侧信息栏；移动端单列，优先展示今日任务 */}
+      <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_20rem] lg:items-start">
+        <div className="min-w-0 space-y-6">
+          <TodayStudyCard dueCount={dueCount} className="lg:hidden" />
+          <DeckTargetSelector decks={decks} value={targetDeckId} onChange={changeTargetDeck} />
+      {metaError && <p role="status" className="text-xs text-warning">{t(metaError)}</p>}
 
       <SearchBar
         query={query}
@@ -249,25 +254,25 @@ export function HomePage() {
       />
 
       {searchMeta.length > 0 && (
-        <p className="rounded-xl bg-slate-100 px-4 py-2 text-sm text-slate-700">
+        <p className="rounded-xl bg-surface-hover px-4 py-2 text-sm text-text">
           {searchMeta.map((notice) => t(notice.message, notice.values)).join("；")}
         </p>
       )}
 
       {errored && outcome.status === "error" && (
-        <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-900">
+        <div className="rounded-xl border border-error/40 bg-error/10 px-4 py-3 text-sm text-error">
           <p className="font-medium">{t("词典请求失败")}</p>
           <p className="mt-1">{t(outcome.message)}</p>
-          <p className="mt-2 text-xs text-red-800">
+          <p className="mt-2 text-xs text-error">
             {t("这与「词库中没有该词」不同。请检查网络，或稍后再试；也可手动创建闪卡。")}
           </p>
-          <button type="button" disabled={loading} onClick={() => void handleSearch(outcome.query)} className="mt-3 mr-2 rounded-lg bg-white px-3 py-1.5 text-xs font-semibold text-red-900 ring-1 ring-red-200 disabled:opacity-50">
+          <button type="button" disabled={loading} onClick={() => void handleSearch(outcome.query)} className="mt-3 mr-2 rounded-lg bg-surface px-3 py-1.5 text-xs font-semibold text-error ring-1 ring-error/40 disabled:opacity-50">
             {t("重试查词")}
           </button>
           <button
             type="button"
             onClick={() => setShowManualForm(true)}
-            className="mt-3 rounded-lg bg-white px-3 py-1.5 text-xs font-semibold text-red-900 ring-1 ring-red-200"
+            className="mt-3 rounded-lg bg-surface px-3 py-1.5 text-xs font-semibold text-error ring-1 ring-error/40"
           >
             {t("手动创建闪卡")}
           </button>
@@ -275,17 +280,17 @@ export function HomePage() {
       )}
 
       {notFound && outcome.status === "not_found" && (
-        <div className="space-y-4 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-4">
+        <div className="space-y-4 rounded-2xl border border-warning/40 bg-warning/10 px-4 py-4">
           <div>
-            <p className="font-medium text-amber-950">{t("暂时没有找到「{{query}}」的释义", { query: outcome.query })}</p>
-            <p className="mt-1 text-sm text-amber-900">
+            <p className="font-medium text-warning">{t("暂时没有找到「{{query}}」的释义", { query: outcome.query })}</p>
+            <p className="mt-1 text-sm text-warning">
               {t("可尝试下方联想词，或直接创建自己的词汇卡。")}
             </p>
           </div>
 
           {outcome.suggestions.length > 0 && (
             <div>
-              <h2 className="mb-2 text-xs font-semibold uppercase text-amber-900">
+              <h2 className="mb-2 text-xs font-semibold uppercase text-warning">
                 {t("联想结果")}
               </h2>
               <ul className="space-y-1">
@@ -294,9 +299,9 @@ export function HomePage() {
                     <button
                       type="button"
                       onClick={() => handleSearch(s.word)}
-                      className="flex w-full items-baseline justify-between rounded-lg bg-white px-3 py-2 text-left text-sm hover:bg-brand-50"
+                      className="flex w-full items-baseline justify-between rounded-lg bg-surface px-3 py-2 text-left text-sm hover:bg-primary"
                     >
-                      <span className="font-medium text-slate-900">{s.word}</span>
+                      <span className="font-medium text-text">{s.word}</span>
                     </button>
                   </li>
                 ))}
@@ -307,7 +312,7 @@ export function HomePage() {
           <button
             type="button"
             onClick={() => setShowManualForm((v) => !v)}
-            className="w-full rounded-xl bg-brand-700 py-2.5 text-sm font-semibold text-white"
+            className="w-full rounded-xl bg-primary-text py-2.5 text-sm font-semibold text-text-inverse"
           >
             {showManualForm ? t("收起表单") : t("手动创建闪卡")}
           </button>
@@ -329,40 +334,31 @@ export function HomePage() {
       )}
 
       {manualSaved && (
-        <p className="text-sm text-brand-800">{t("闪卡已保存，可在「词库」中查看。")}</p>
+        <p className="text-sm text-primary-text">{t("闪卡已保存，可在「词库」中查看。")}</p>
       )}
 
-      {recent.length > 0 && results.length === 0 && !loading && !notFound && !errored && (
-        <section>
-          <h2 className="mb-2 text-xs font-semibold uppercase text-slate-500">
-            {t("最近搜索")}
-          </h2>
-          <div className="flex flex-wrap gap-2">
-            {recent.map((word) => (
-              <button
-                key={word}
-                type="button"
-                onClick={() => handleSearch(word)}
-                className="rounded-full border border-slate-200 bg-white px-3 py-1 text-sm text-slate-700"
-              >
-                {word}
-              </button>
+          <div className="space-y-4 lg:space-y-5">
+            {saveError && <p role="alert" className="text-sm text-error">{t(saveError)}</p>}
+            {results.map((entry, i) => (
+              <WordCard
+                key={`${entry.word}-${i}`}
+                entry={entry}
+                onSaveEntry={() => void handleSave(entry)}
+                saving={savingWord === dictionaryEntryKey(entry.language, entry.word)}
+                saved={savedWords.has(dictionaryEntryKey(entry.language, entry.word))}
+              />
             ))}
           </div>
-        </section>
-      )}
 
-      <div className="space-y-4">
-        {saveError && <p role="alert" className="text-sm text-red-700">{t(saveError)}</p>}
-        {results.map((entry, i) => (
-          <WordCard
-            key={`${entry.word}-${i}`}
-            entry={entry}
-            onSaveEntry={() => void handleSave(entry)}
-            saving={savingWord === dictionaryEntryKey(entry.language, entry.word)}
-            saved={savedWords.has(dictionaryEntryKey(entry.language, entry.word))}
-          />
-        ))}
+          {recent.length > 0 && results.length === 0 && !loading && !notFound && !errored && (
+            <RecentSearches words={recent} onPick={handleSearch} className="lg:hidden" />
+          )}
+        </div>
+
+        <aside className="hidden lg:sticky lg:top-8 lg:block lg:space-y-6">
+          <TodayStudyCard dueCount={dueCount} />
+          {recent.length > 0 && <RecentSearches words={recent} onPick={handleSearch} />}
+        </aside>
       </div>
     </div>
   );
@@ -370,9 +366,71 @@ export function HomePage() {
 
 function DeckTargetSelector({ decks, value, onChange }: { decks: Deck[]; value: string; onChange: (value: string) => void }) {
   const { t } = useI18n();
-  return <label className="flex items-center gap-3 text-sm"><span className="shrink-0 text-slate-500">{t("添加到闪卡库")}</span><DeckIcon name={decks.find((deck) => deck.id === value)?.icon ?? "library"} className="h-5 w-5" /><select value={value} onChange={(event) => onChange(event.target.value)} className="min-w-0 flex-1 rounded-lg border border-slate-200 bg-white px-3 py-2">{decks.map((deck) => <option key={deck.id} value={deck.id}>{deck.id === "default" && deck.name === "默认闪卡库" ? t("默认闪卡库") : deck.name}</option>)}</select></label>;
+  return <label className="flex items-center gap-3 text-sm"><span className="shrink-0 text-text-muted">{t("添加到闪卡库")}</span><DeckIcon name={decks.find((deck) => deck.id === value)?.icon ?? "library"} className="h-5 w-5" /><select value={value} onChange={(event) => onChange(event.target.value)} className="min-w-0 flex-1 rounded-lg border border-border bg-surface px-3 py-2">{decks.map((deck) => <option key={deck.id} value={deck.id}>{deck.id === "default" && deck.name === "默认闪卡库" ? t("默认闪卡库") : deck.name}</option>)}</select></label>;
 }
 
 function dictionaryEntryKey(language: string, word: string): string {
   return `${language}:${word.normalize("NFC").toLocaleLowerCase()}`;
+}
+
+/** 今日学习任务卡片：移动端置顶、桌面端位于右侧信息栏。 */
+function TodayStudyCard({ dueCount, className = "" }: { dueCount: number; className?: string }) {
+  const { t } = useI18n();
+  return (
+    <section className={`rounded-2xl border border-border bg-surface p-4 shadow-sm ${className}`}>
+      <h2 className="text-sm font-semibold text-text">{t("今日学习")}</h2>
+      {dueCount > 0 ? (
+        <>
+          <p className="mt-2 text-3xl font-bold tabular-nums text-text">{dueCount}</p>
+          <p className="text-xs text-text-muted">{t("张闪卡待复习")}</p>
+          <Link
+            to="/review"
+            className="mt-3 inline-flex min-h-[44px] w-full items-center justify-center rounded-xl bg-primary-text px-4 text-sm font-semibold text-text-inverse"
+          >
+            {t("开始复习")}
+          </Link>
+        </>
+      ) : (
+        <>
+          <p className="mt-2 text-sm text-text-muted">{t("今天没有待复习的单词")}</p>
+          <Link
+            to="/"
+            className="mt-3 inline-flex min-h-[44px] w-full items-center justify-center rounded-xl border border-primary-text px-4 text-sm font-semibold text-primary-text hover:bg-primary"
+          >
+            {t("去查词添加单词")}
+          </Link>
+        </>
+      )}
+    </section>
+  );
+}
+
+/** 最近搜索：移动端位于搜索区下方，桌面端位于右侧信息栏。 */
+function RecentSearches({
+  words,
+  onPick,
+  className = "",
+}: {
+  words: string[];
+  onPick: (word: string) => void;
+  className?: string;
+}) {
+  const { t } = useI18n();
+  return (
+    <section className={className}>
+      <h2 className="mb-2 text-xs font-semibold uppercase text-text-muted">{t("最近搜索")}</h2>
+      <div className="flex flex-wrap gap-2">
+        {words.map((word) => (
+          <button
+            key={word}
+            type="button"
+            onClick={() => onPick(word)}
+            className="min-h-[36px] rounded-full border border-border bg-surface px-3 py-1 text-sm text-text hover:bg-surface-hover"
+          >
+            {word}
+          </button>
+        ))}
+      </div>
+    </section>
+  );
 }

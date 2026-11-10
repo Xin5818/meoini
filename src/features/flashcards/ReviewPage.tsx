@@ -171,7 +171,45 @@ export function ReviewPage() {
     }
   }
 
-  if (planLoading && planStats.dueToday === 0 && planStats.notDue === 0 && planStats.newCards === 0) return <div><p role="status" className="text-slate-500">{t("加载复习计划…")}</p>{planError && <p role="alert" className="mt-2 text-sm text-red-700">{t(planError)} <button type="button" onClick={() => void refreshPlan()} className="underline">{t("重试")}</button></p>}</div>;
+  // 桌面端键盘快捷键：Space 翻转卡片，1 / 2 / 3 评分（评分需先翻转）。
+  useEffect(() => {
+    if (!sessionMode || !current) return;
+    const onKeyDown = (event: KeyboardEvent) => {
+      const target = event.target as HTMLElement | null;
+      if (
+        target &&
+        (target.tagName === "INPUT" ||
+          target.tagName === "TEXTAREA" ||
+          target.tagName === "SELECT" ||
+          target.isContentEditable)
+      ) {
+        return;
+      }
+      if (event.key === " " || event.key === "Spacebar" || event.code === "Space") {
+        if (!revealed && !event.repeat) {
+          event.preventDefault();
+          setRevealed(true);
+        }
+        return;
+      }
+      if (!revealed || savingReview) return;
+      if (event.key === "1") {
+        event.preventDefault();
+        void rate("again");
+      } else if (event.key === "2") {
+        event.preventDefault();
+        void rate("hard");
+      } else if (event.key === "3") {
+        event.preventDefault();
+        void rate("good");
+      }
+    };
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+    // rate 依赖 sessionMode / current / savingReview / queue，均由下列依赖触发重建。
+  }, [sessionMode, current, revealed, savingReview, queue]);
+
+  if (planLoading && planStats.dueToday === 0 && planStats.notDue === 0 && planStats.newCards === 0) return <div><p role="status" className="text-text-muted">{t("加载复习计划…")}</p>{planError && <p role="alert" className="mt-2 text-sm text-error">{t(planError)} <button type="button" onClick={() => void refreshPlan()} className="underline">{t("重试")}</button></p>}</div>;
 
   const dictionaryEntry = current?.dictionaryEntry;
   const meanings: { text: string; grammaticalForm?: string }[] = dictionaryEntry?.meanings.length
@@ -188,12 +226,12 @@ export function ReviewPage() {
     <div className="space-y-6">
       <header className="flex items-center justify-between">
         <h1 className="text-xl font-bold">{sessionMode ? t("复习中") : t("复习计划")}</h1>
-        {sessionMode && <button type="button" onClick={() => void returnToPlan()} className="text-sm font-medium text-brand-700 underline">{t("返回计划")}</button>}
+        {sessionMode && <button type="button" onClick={() => void returnToPlan()} className="text-sm font-medium text-primary-text underline">{t("返回计划")}</button>}
       </header>
 
-      <section className="rounded-2xl border border-slate-200 bg-white p-4" aria-label={t("复习计划概览")}>
-        <h2 className="text-sm font-semibold text-slate-800">{t("复习统计")}</h2>
-        <p className="mt-1 text-xs text-slate-500">{activeDeck.icon} {activeDeck.id === "default" && activeDeck.name === "默认闪卡库" ? t("默认闪卡库") : activeDeck.name} · {t("本库复习范围")}</p>
+      <section className="rounded-2xl border border-border bg-surface p-4" aria-label={t("复习计划概览")}>
+        <h2 className="text-sm font-semibold text-text">{t("复习统计")}</h2>
+        <p className="mt-1 text-xs text-text-muted">{activeDeck.icon} {activeDeck.id === "default" && activeDeck.name === "默认闪卡库" ? t("默认闪卡库") : activeDeck.name} · {t("本库复习范围")}</p>
         <dl className="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-4">
           <PlanStat label={t("今日待复习")} value={planStats.dueToday} />
           <PlanStat label={t("今日已完成")} value={planStats.completedToday} />
@@ -201,16 +239,16 @@ export function ReviewPage() {
           <PlanStat label={t("待首次复习")} value={planStats.newCards} />
         </dl>
         {!sessionMode && !planLoading && (
-          <details className="mt-3 rounded-lg bg-slate-50 px-3 py-2 text-xs text-slate-600">
+          <details className="mt-3 rounded-lg bg-surface-hover px-3 py-2 text-xs text-text-muted">
             <summary className="cursor-pointer font-medium">
               {t("提前复习筛选诊断：候选 {{candidate}} / {{total}} 张", { candidate: earlyDiagnostics.filter((item) => item.eligible).length, total: earlyDiagnostics.length })}
             </summary>
             {earlyDiagnostics.length ? (
               <ul className="mt-2 max-h-48 space-y-2 overflow-y-auto">
                 {earlyDiagnostics.map((item) => (
-                  <li key={item.id} className="border-t border-slate-200 pt-2">
-                    <span className="font-medium text-slate-800">{item.word}</span> — {t(item.reason)}
-                    <span className="block text-[11px] text-slate-500">
+                  <li key={item.id} className="border-t border-border pt-2">
+                    <span className="font-medium text-text">{item.word}</span> — {t(item.reason)}
+                    <span className="block text-[11px] text-text-muted">
                       dueAt {new Date(item.dueAt).toLocaleString()} · repetitions {item.repetitions} · lastReviewMode {item.lastReviewMode ?? t("无")} · lastReviewedAt {item.lastReviewedAt === undefined ? t("无") : new Date(item.lastReviewedAt).toLocaleString()}
                     </span>
                   </li>
@@ -226,7 +264,7 @@ export function ReviewPage() {
               type="button"
               disabled={loading || planStats.dueToday === 0}
               onClick={() => void startScheduledReview()}
-              className="w-full rounded-xl bg-brand-700 px-4 py-3 text-sm font-semibold text-white disabled:cursor-not-allowed disabled:opacity-50"
+              className="w-full rounded-xl bg-primary-text px-4 py-3 text-sm font-semibold text-text-inverse disabled:cursor-not-allowed disabled:opacity-50"
             >
               {loading ? t("正在加载…") : t("开始今日复习（{{count}}）", { count: planStats.dueToday })}
             </button>
@@ -235,7 +273,7 @@ export function ReviewPage() {
                 type="button"
                 disabled={loading}
                 onClick={() => setShowEarlyOptions((open) => !open)}
-                className="w-full rounded-xl border border-brand-700 px-4 py-3 text-sm font-semibold text-brand-800 disabled:opacity-50"
+                className="w-full rounded-xl border border-primary-text px-4 py-3 text-sm font-semibold text-primary-text disabled:opacity-50"
               >
                 {showEarlyOptions ? t("收起提前复习") : t("提前复习（可选 {{count}} 个）", { count: planStats.earlyAvailable })}
               </button>
@@ -247,46 +285,47 @@ export function ReviewPage() {
                       type="button"
                       disabled={loading || planStats.earlyAvailable === 0}
                       onClick={() => void startEarlyReview(limit)}
-                      className="rounded-lg border border-slate-300 px-3 py-2 text-sm text-slate-800 disabled:cursor-not-allowed disabled:opacity-50"
+                      className="rounded-lg border border-border px-3 py-2 text-sm text-text disabled:cursor-not-allowed disabled:opacity-50"
                     >
                       {limit === "all" ? t("全部（{{count}}）", { count: planStats.earlyAvailable }) : t("{{count}} 个", { count: limit })}
                     </button>
                   ))}
                 </div>
               )}
-              <p className="mt-2 text-xs text-slate-500">{t("自由练习优先选择未复习的新单词，再选择未到期卡片；不会改变原定复习计划。")}</p>
+              <p className="mt-2 text-xs text-text-muted">{t("自由练习优先选择未复习的新单词，再选择未到期卡片；不会改变原定复习计划。")}</p>
             </div>
           </div>
         )}
       </section>
 
-      {planError && <p role="alert" className="text-sm text-red-700">{t(planError)} <button type="button" onClick={() => void refreshPlan()} className="font-medium underline">{t("重试读取复习计划")}</button></p>}
-      {reviewError && <p role="alert" className="text-sm text-red-700">{t(reviewError)}</p>}
-      {sessionMessage && !sessionMode && <p role="status" className="text-sm text-slate-600">{t(sessionMessage)}</p>}
+      {planError && <p role="alert" className="text-sm text-error">{t(planError)} <button type="button" onClick={() => void refreshPlan()} className="font-medium underline">{t("重试读取复习计划")}</button></p>}
+      {reviewError && <p role="alert" className="text-sm text-error">{t(reviewError)}</p>}
+      {sessionMessage && !sessionMode && <p role="status" className="text-sm text-text-muted">{t(sessionMessage)}</p>}
       {!sessionMode && planStats.dueToday === 0 && (
-        <div className="rounded-xl bg-slate-50 p-4 text-center">
-          <p className="font-medium text-slate-800">{t("今天没有待复习的单词")}</p>
-          <Link to="/" className="mt-2 inline-block text-sm text-brand-700 underline">{t("去查词添加单词")}</Link>
+        <div className="rounded-xl bg-surface-hover p-4 text-center">
+          <p className="font-medium text-text">{t("今天没有待复习的单词")}</p>
+          <Link to="/" className="mt-2 inline-block text-sm text-primary-text underline">{t("去查词添加单词")}</Link>
         </div>
       )}
 
       {sessionId && sessionMode && !current && (
-        <section key={sessionId} className="rounded-2xl border border-emerald-200 bg-emerald-50 p-5 text-center" role="status">
-          <h2 className="font-semibold text-emerald-900">{sessionMode === "early" ? t("提前练习完成") : t("今日复习完成")}</h2>
-          <p className="mt-1 text-sm text-emerald-800">{t("复习统计已更新。")}</p>
-          <button type="button" onClick={() => void returnToPlan()} className="mt-3 rounded-lg bg-white px-4 py-2 text-sm font-semibold text-emerald-900">{t("返回复习计划")}</button>
+        <section key={sessionId} className="rounded-2xl border border-success/40 bg-success/10 p-5 text-center" role="status">
+          <h2 className="font-semibold text-success">{sessionMode === "early" ? t("提前练习完成") : t("今日复习完成")}</h2>
+          <p className="mt-1 text-sm text-success">{t("复习统计已更新。")}</p>
+          <button type="button" onClick={() => void returnToPlan()} className="mt-3 rounded-lg bg-surface px-4 py-2 text-sm font-semibold text-success">{t("返回复习计划")}</button>
         </section>
       )}
-      {sessionMode && !current && sessionMessage && <p role="status" className="text-sm text-slate-600">{t(sessionMessage)}</p>}
+      {sessionMode && !current && sessionMessage && <p role="status" className="text-sm text-text-muted">{t(sessionMessage)}</p>}
 
       {sessionMode && current && (
-        <>
-          <div className={`rounded-lg px-3 py-2 text-sm ${sessionMode === "early" ? "bg-sky-50 text-sky-900" : "bg-amber-50 text-amber-900"}`}>
+        <div className="lg:grid lg:grid-cols-[minmax(0,1fr)_18rem] lg:items-start lg:gap-6">
+          <div className="mx-auto w-full max-w-2xl space-y-4">
+          <div className={`rounded-lg px-3 py-2 text-sm ${sessionMode === "early" ? "bg-info/10 text-info" : "bg-warning/10 text-warning"}`}>
             {sessionMode === "early" ? t("提前复习 · 自由练习，不调整间隔计划") : t("今日到期复习 · 评分将更新间隔计划")} · {t("剩余 {{count}} 张", { count: queue.length })}
           </div>
 
       <div
-        className="min-h-[280px] rounded-2xl border border-slate-200 bg-white p-6 shadow-sm"
+        className="min-h-[280px] rounded-2xl border border-border bg-surface p-6 shadow-sm"
         onClick={() => !revealed && setRevealed(true)}
         role="button"
         tabIndex={0}
@@ -294,9 +333,9 @@ export function ReviewPage() {
           if (e.target === e.currentTarget && (e.key === "Enter" || e.key === " ")) setRevealed(true);
         }}
       >
-        {current.cardType !== "custom" && <p className="text-xs font-medium uppercase tracking-wide text-slate-400">{current.language}</p>}
+        {current.cardType !== "custom" && <p className="text-xs font-medium uppercase tracking-wide text-text-muted">{current.language}</p>}
         <div className="mt-2">
-          <p className="whitespace-pre-wrap text-2xl font-bold leading-relaxed text-slate-900">{getFlashcardFront(current)}</p>
+          <p className="whitespace-pre-wrap text-2xl font-bold leading-relaxed text-text">{getFlashcardFront(current)}</p>
         </div>
 
         {revealed && current.language === "fi" && (
@@ -314,26 +353,26 @@ export function ReviewPage() {
         )}
 
         {!revealed ? (
-          <p className="mt-8 text-center text-sm text-slate-400">
+          <p className="mt-8 text-center text-sm text-text-muted">
             {t(current.cardType === "custom" ? "点击显示背面" : "点击显示释义")}
           </p>
         ) : (
-          <div className="mt-6 max-h-[55vh] space-y-3 overflow-y-auto overscroll-contain border-t border-slate-100 pt-4 pr-1">
+          <div className="mt-6 max-h-[55vh] space-y-3 overflow-y-auto overscroll-contain border-t border-border pt-4 pr-1">
             {current.cardType === "custom" ? <section className="space-y-3" onClick={(event) => event.stopPropagation()}>
-              <p className="whitespace-pre-wrap text-base leading-relaxed text-slate-900">{getFlashcardBack(current)}</p>
-              {current.notes && <div className="rounded-lg bg-slate-50 p-3 dark:bg-slate-800"><h3 className="mb-1 text-xs font-semibold uppercase tracking-wide text-slate-500">{t("备注")}</h3><p className="whitespace-pre-wrap text-sm leading-relaxed text-slate-700 dark:text-slate-200">{current.notes}</p></div>}
+              <p className="whitespace-pre-wrap text-base leading-relaxed text-text">{getFlashcardBack(current)}</p>
+              {current.notes && <div className="rounded-lg bg-surface-hover p-3"><h3 className="mb-1 text-xs font-semibold uppercase tracking-wide text-text-muted">{t("备注")}</h3><p className="whitespace-pre-wrap text-sm leading-relaxed text-text">{current.notes}</p></div>}
               {current.audioUrl && <audio controls preload="none" src={current.audioUrl} className="w-full">{t("浏览器不支持音频播放")}</audio>}
               {current.imageUrl && <img src={current.imageUrl} alt={t("闪卡图片")} className="max-h-72 max-w-full rounded-lg object-contain" />}
             </section> : <>
-            {current.partOfSpeech && <p className="text-xs text-slate-500">{current.partOfSpeech}</p>}
+            {current.partOfSpeech && <p className="text-xs text-text-muted">{current.partOfSpeech}</p>}
             {meanings.length ? (
               <section aria-label={t("英文释义")}>
-                <h3 className="text-sm font-semibold text-slate-800">{t("英文释义")}</h3>
-                <ol className="mt-1 list-decimal space-y-2 pl-5 text-sm text-slate-900 dark:text-slate-950">
+                <h3 className="text-sm font-semibold text-text">{t("英文释义")}</h3>
+                <ol className="mt-1 list-decimal space-y-2 pl-5 text-sm text-text">
                   {visibleMeanings.map((meaning, index) => (
                     <li key={`review-meaning-${index}`}>
                       <span>{meaning.text}</span>
-                      {meaning.grammaticalForm && <span className="ml-1 text-xs text-slate-500">（{t(meaning.grammaticalForm)}）</span>}
+                      {meaning.grammaticalForm && <span className="ml-1 text-xs text-text-muted">（{t(meaning.grammaticalForm)}）</span>}
                     </li>
                   ))}
                 </ol>
@@ -347,16 +386,16 @@ export function ReviewPage() {
                 )}
               </section>
             ) : (
-              <p className="text-sm text-slate-500">
+              <p className="text-sm text-text-muted">
                 {t(current.dictionaryEntry?.forms?.length ? "词形条目（见下方词形信息）" : current.lookupStatus === "not_found" ? "暂未找到释义" : current.lookupStatus === "error" ? "查询暂时失败，可稍后在词库重试" : current.lookupStatus === "querying" ? "释义查询中…" : current.lookupStatus === "pending" ? "待查询" : "待补充释义")}
               </p>
             )}
             {dictionaryEntry ? (
-              <section className="space-y-3 border-t border-slate-100 pt-3">
+              <section className="space-y-3 border-t border-border pt-3">
                 {dictionaryEntry.forms?.length ? (
                   <div>
-                    <h3 className="text-sm font-semibold text-slate-800">{t("词形信息")}</h3>
-                    <ul className="mt-1 space-y-1 text-sm text-slate-700">
+                    <h3 className="text-sm font-semibold text-text">{t("词形信息")}</h3>
+                    <ul className="mt-1 space-y-1 text-sm text-text-muted">
                       {dictionaryEntry.forms.map((form, index) => (
                         <li key={`review-form-${index}`}>
                           {t(form.grammaticalForm)}{form.grammaticalNumber ? ` · ${form.grammaticalNumber === "singular" ? t("单数") : t("复数")}` : ""} · {form.lemma} {t("的词形")}{form.gloss ? `：${form.gloss}` : ""}
@@ -366,31 +405,31 @@ export function ReviewPage() {
                   </div>
                 ) : null}
                 <div>
-                    <h3 className="text-sm font-semibold text-slate-800">{t("例句")}</h3>
+                    <h3 className="text-sm font-semibold text-text">{t("例句")}</h3>
                   {sentences.length ? (
                     <ul className="mt-1 space-y-2">
                       {visibleSentences.map((example, index) => (
                         <li key={`review-sentence-${index}`}>
-                          <p className="text-sm italic text-black dark:text-slate-950">&ldquo;{example.text}&rdquo;</p>
-                          {example.translation && <p className="mt-1 text-sm text-slate-700 dark:text-slate-700">{t("英文翻译：")} {example.translation}</p>}
-                          {example.formOf && <p className="mt-1 text-xs text-slate-600">{t("词形关系：")} {example.formOf} {t("是")} {current.word} {t("的")} {t(example.grammaticalForm ?? "词形变化")}</p>}
+                          <p className="text-sm italic text-text">&ldquo;{example.text}&rdquo;</p>
+                          {example.translation && <p className="mt-1 text-sm text-text-muted">{t("英文翻译：")} {example.translation}</p>}
+                          {example.formOf && <p className="mt-1 text-xs text-text-muted">{t("词形关系：")} {example.formOf} {t("是")} {current.word} {t("的")} {t(example.grammaticalForm ?? "词形变化")}</p>}
                         </li>
                       ))}
                     </ul>
-                  ) : <p className="mt-1 text-sm text-slate-500">{t("暂无例句")}</p>}
+                  ) : <p className="mt-1 text-sm text-text-muted">{t("暂无例句")}</p>}
                   {sentences.length > 2 && (
                     <ExpandButton expanded={showAllExamples} expandLabel={t("查看全部例句")} collapseLabel={t("收起例句")} onClick={() => setShowAllExamples((value) => !value)} />
                   )}
                 </div>
                 {collocations.length > 0 && (
                   <div>
-                    <h3 className="text-sm font-semibold text-slate-800">{t("相关搭配")}</h3>
+                    <h3 className="text-sm font-semibold text-text">{t("相关搭配")}</h3>
                     <ul className="mt-1 space-y-2">
                       {visibleCollocations.map((example, index) => (
                         <li key={`review-collocation-${index}`}>
-                          <p className="text-sm text-black dark:text-slate-950">{example.text}</p>
-                          {example.translation && <p className="mt-1 text-sm text-slate-700 dark:text-slate-700">{t("英文释义：")} {example.translation}</p>}
-                          {example.formOf && <p className="mt-1 text-xs text-slate-600">{t("词形关系：")} {example.formOf} {t("是")} {current.word} {t("的")} {t(example.grammaticalForm ?? "词形变化")}</p>}
+                          <p className="text-sm text-text">{example.text}</p>
+                          {example.translation && <p className="mt-1 text-sm text-text-muted">{t("英文释义：")} {example.translation}</p>}
+                          {example.formOf && <p className="mt-1 text-xs text-text-muted">{t("词形关系：")} {example.formOf} {t("是")} {current.word} {t("的")} {t(example.grammaticalForm ?? "词形变化")}</p>}
                         </li>
                       ))}
                     </ul>
@@ -401,9 +440,9 @@ export function ReviewPage() {
                 )}
               </section>
             ) : current.example ? (
-              <div className="border-t border-slate-100 pt-3">
-                <h3 className="text-sm font-semibold text-slate-800">{t("例句")}</h3>
-                <p className="mt-1 text-sm italic text-black dark:text-slate-950">&ldquo;{current.example}&rdquo;</p>
+              <div className="border-t border-border pt-3">
+                <h3 className="text-sm font-semibold text-text">{t("例句")}</h3>
+                <p className="mt-1 text-sm italic text-text">&ldquo;{current.example}&rdquo;</p>
               </div>
             ) : null}
             </>}
@@ -413,12 +452,17 @@ export function ReviewPage() {
 
       {revealed && (
         <div className="grid grid-cols-3 gap-2">
-          <RatingButton label={savingReview ? t("保存中…") : t("不会")} sub={sessionMode === "early" ? t("只记录练习") : t("稍后复习")} disabled={savingReview} onClick={() => void rate("again")} />
-          <RatingButton label={savingReview ? t("保存中…") : t("有点印象")} sub={sessionMode === "early" ? t("只记录练习") : t("短间隔")} disabled={savingReview} onClick={() => void rate("hard")} />
-          <RatingButton label={savingReview ? t("保存中…") : t("记得")} sub={sessionMode === "early" ? t("只记录练习") : t("延长间隔")} disabled={savingReview} onClick={() => void rate("good")} />
+          <RatingButton hotkey="1" label={savingReview ? t("保存中…") : t("不会")} sub={sessionMode === "early" ? t("只记录练习") : t("稍后复习")} disabled={savingReview} onClick={() => void rate("again")} />
+          <RatingButton hotkey="2" label={savingReview ? t("保存中…") : t("有点印象")} sub={sessionMode === "early" ? t("只记录练习") : t("短间隔")} disabled={savingReview} onClick={() => void rate("hard")} />
+          <RatingButton hotkey="3" label={savingReview ? t("保存中…") : t("记得")} sub={sessionMode === "early" ? t("只记录练习") : t("延长间隔")} disabled={savingReview} onClick={() => void rate("good")} />
         </div>
       )}
-        </>
+          </div>
+
+          <aside className="hidden lg:sticky lg:top-8 lg:block">
+            <SessionSidePanel mode={sessionMode} remaining={queue.length} />
+          </aside>
+        </div>
       )}
     </div>
   );
@@ -444,7 +488,7 @@ function ExpandButton({
         onClick();
       }}
       onKeyDown={(event) => event.stopPropagation()}
-      className="mt-2 min-h-10 rounded-lg px-2 text-sm font-medium text-brand-700 underline underline-offset-2 dark:text-brand-700"
+      className="mt-2 min-h-10 rounded-lg px-2 text-sm font-medium text-primary-text underline underline-offset-2"
     >
       {expanded ? collapseLabel : expandLabel}
     </button>
@@ -453,9 +497,9 @@ function ExpandButton({
 
 function PlanStat({ label, value }: { label: string; value: number }) {
   return (
-    <div className="rounded-xl bg-slate-50 px-3 py-3">
-      <dt className="text-xs text-slate-500">{label}</dt>
-      <dd className="mt-1 text-2xl font-bold tabular-nums text-slate-900">{value}</dd>
+    <div className="rounded-xl bg-surface-hover px-3 py-3">
+      <dt className="text-xs text-text-muted">{label}</dt>
+      <dd className="mt-1 text-2xl font-bold tabular-nums text-text">{value}</dd>
     </div>
   );
 }
@@ -465,21 +509,67 @@ function RatingButton({
   sub,
   disabled,
   onClick,
+  hotkey,
 }: {
   label: string;
   sub: string;
   disabled: boolean;
   onClick: () => void;
+  hotkey?: string;
 }) {
   return (
     <button
       type="button"
       disabled={disabled}
       onClick={onClick}
-      className="rounded-xl border border-slate-200 bg-white py-3 text-center shadow-sm active:bg-slate-50 disabled:opacity-50"
+      className="flex min-h-[56px] flex-col items-center justify-center rounded-xl border border-border bg-surface py-3 text-center shadow-sm active:bg-surface-hover disabled:opacity-50"
     >
-      <span className="block text-sm font-semibold text-slate-800">{label}</span>
-      <span className="block text-[10px] text-slate-400">{sub}</span>
+      <span className="block text-sm font-semibold text-text">
+        {label}
+        {hotkey && (
+          <kbd className="ml-1.5 hidden rounded border border-border bg-surface-hover px-1 font-mono text-[10px] text-text-muted lg:inline-block">{hotkey}</kbd>
+        )}
+      </span>
+      <span className="block text-[10px] text-text-muted">{sub}</span>
     </button>
+  );
+}
+
+/** 复习会话的桌面端侧栏：展示本次进度与键盘快捷键。 */
+function SessionSidePanel({ mode, remaining }: { mode: ReviewMode; remaining: number }) {
+  const { t } = useI18n();
+  return (
+    <div className="space-y-4">
+      <section className="rounded-2xl border border-border bg-surface p-4">
+        <h2 className="text-sm font-semibold text-text">{t("本次学习进度")}</h2>
+        <p className="mt-2 text-3xl font-bold tabular-nums text-text">{remaining}</p>
+        <p className="text-xs text-text-muted">{t("剩余卡片")}</p>
+        <p className="mt-3 text-xs text-text-muted">{mode === "early" ? t("提前复习 · 自由练习，不调整间隔计划") : t("今日到期复习 · 评分将更新间隔计划")}</p>
+      </section>
+      <section className="rounded-2xl border border-border bg-surface p-4">
+        <h2 className="text-sm font-semibold text-text">{t("键盘快捷键")}</h2>
+        <dl className="mt-2 space-y-2 text-xs text-text-muted">
+          <div className="flex items-center justify-between gap-2">
+            <dt>{t("翻转卡片")}</dt>
+            <dd><Kbd>Space</Kbd></dd>
+          </div>
+          <div className="flex items-center justify-between gap-2">
+            <dt>{t("评分")}</dt>
+            <dd className="flex gap-1"><Kbd>1</Kbd><Kbd>2</Kbd><Kbd>3</Kbd></dd>
+          </div>
+          <div className="flex items-center justify-between gap-2">
+            <dt>{t("关闭弹窗")}</dt>
+            <dd><Kbd>Esc</Kbd></dd>
+          </div>
+        </dl>
+        <p className="mt-2 text-[11px] text-text-muted/70">{t("评分前需先翻转卡片。")}</p>
+      </section>
+    </div>
+  );
+}
+
+function Kbd({ children }: { children: string }) {
+  return (
+    <kbd className="rounded border border-border bg-surface-hover px-1.5 py-0.5 font-mono text-[11px] text-text">{children}</kbd>
   );
 }

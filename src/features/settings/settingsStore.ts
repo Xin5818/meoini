@@ -1,11 +1,15 @@
 const STORAGE_KEY = "meoini.settings";
 
+export type ThemeMode = "light" | "dark";
+
 export interface AppSettings {
   learningLanguage: string;
+  theme: ThemeMode;
 }
 
 const defaults: AppSettings = {
   learningLanguage: "en",
+  theme: "light",
 };
 
 export function loadSettings(): AppSettings {
@@ -23,6 +27,13 @@ export function saveSettings(partial: Partial<AppSettings>) {
   localStorage.setItem(STORAGE_KEY, JSON.stringify(next));
   return next;
 }
+
+// 主题通过 <html data-theme="..."> 切换，全部颜色由 src/styles/themes.css 提供。
+export function applyTheme(theme: ThemeMode) {
+  if (typeof document === "undefined") return;
+  document.documentElement.dataset.theme = theme;
+}
+
 
 const RECENT_KEY = "meoini.recentSearches";
 

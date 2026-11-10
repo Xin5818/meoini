@@ -5,8 +5,11 @@ import App from "./app/App.tsx";
 import "./index.css";
 import { I18nProvider } from "./i18n/I18nProvider";
 import { DeckProvider } from "./features/decks/DeckContext";
+import { applyTheme, loadSettings } from "./features/settings/settingsStore";
 
 registerSW({ immediate: true });
+
+applyTheme(loadSettings().theme);
 
 createRoot(document.getElementById("root")!).render(
   <StrictMode>

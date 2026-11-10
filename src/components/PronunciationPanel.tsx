@@ -139,12 +139,12 @@ export function PronunciationPanel({
   if (!showPanel) return null;
 
   return (
-    <section className="w-fit max-w-full rounded-xl bg-slate-50 p-3" aria-label={t("发音与音标")}>
+    <section className="w-fit max-w-full rounded-xl bg-surface-hover p-3" aria-label={t("发音与音标")}>
       <div className="flex flex-wrap items-center gap-3">
         <button
           type="button"
           onClick={playPronunciation}
-          className="inline-flex items-center justify-center rounded-lg border border-brand-600 bg-white p-2 text-brand-800 hover:bg-brand-50"
+          className="inline-flex items-center justify-center rounded-lg border border-primary-text bg-surface p-2 text-primary-text hover:bg-primary"
           aria-label={t(speaking ? "停止播放发音" : "播放发音")}
           title={t(speaking ? "停止播放发音" : "播放发音")}
         >
@@ -153,12 +153,12 @@ export function PronunciationPanel({
         {ipaValues.length ? (
           <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
             {ipaValues.map((value, index) => (
-              <span key={`${value}-${index}`} className="font-mono text-base text-slate-900">{value}</span>
+              <span key={`${value}-${index}`} className="font-mono text-base text-text">{value}</span>
             ))}
           </div>
-        ) : <p className="text-sm text-slate-500">{t("暂无音标")}</p>}
+        ) : <p className="text-sm text-text-muted">{t("暂无音标")}</p>}
         {records.find((record) => record.syllabification)?.syllabification && (
-          <p className="text-sm text-slate-600">
+          <p className="text-sm text-text-muted">
             {t("音节：")} {records.find((record) => record.syllabification)?.syllabification}
           </p>
         )}
@@ -184,7 +184,7 @@ export function PronunciationPanel({
                 event.stopPropagation();
                 if (event.key === "Escape") setGuidanceExpanded(false);
               }}
-              className="inline-flex h-7 w-7 items-center justify-center rounded-full text-slate-500 transition hover:bg-slate-200 hover:text-slate-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-600"
+              className="inline-flex h-7 w-7 items-center justify-center rounded-full text-icon transition hover:bg-surface-hover hover:text-text focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-text"
             >
               <InfoIcon />
             </button>
@@ -197,7 +197,7 @@ export function PronunciationPanel({
                 onMouseEnter={keepGuidanceOpen}
                 onMouseLeave={scheduleGuidanceClose}
                 onKeyDown={(event) => event.stopPropagation()}
-                className="fixed z-[100] w-[min(20rem,calc(100vw-1.5rem))] overflow-y-auto overscroll-contain rounded-xl border border-slate-200 bg-white p-3 text-sm text-slate-700 shadow-xl"
+                className="fixed z-[100] w-[min(20rem,calc(100vw-1.5rem))] overflow-y-auto overscroll-contain rounded-xl border border-border bg-surface p-3 text-sm text-text shadow-xl"
                 style={{ top: guidancePosition.top, left: guidancePosition.left, maxHeight: guidancePosition.maxHeight }}
               >
                 <ol className="list-decimal space-y-2 pl-5">
@@ -219,12 +219,12 @@ export function PronunciationPanel({
       </div>
 
       {shouldShowPronunciationPlaybackMessage(playback?.status) && playback && (
-        <p className="mt-2 text-xs text-slate-600" role="status" aria-live="polite">
+        <p className="mt-2 text-xs text-text-muted" role="status" aria-live="polite">
           {t(playback.message)}
         </p>
       )}
 
-      <div className="flex flex-wrap gap-x-3 text-xs text-slate-500">
+      <div className="flex flex-wrap gap-x-3 text-xs text-text-muted">
         {ipaSources.map((source) => (
           <span key={`ipa-${source.source?.toLocaleLowerCase()}`}>
             {t("IPA 来源：")}<SourceLink href={source.sourceUrl ?? "https://en.wiktionary.org/"}>{source.source ?? t("词典")}</SourceLink>
@@ -243,7 +243,7 @@ export function PronunciationPanel({
 
 function SourceLink({ href, children }: { href: string; children: string }) {
   return (
-    <a href={href} target="_blank" rel="noreferrer" className="ml-1 text-brand-800 underline">
+    <a href={href} target="_blank" rel="noreferrer" className="ml-1 text-primary-text underline">
       {children}
     </a>
   );
