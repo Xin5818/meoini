@@ -225,13 +225,13 @@ export function ReviewPage() {
   return (
     <div className="space-y-6">
       <header className="flex items-center justify-between">
-        <h1 className="text-xl font-bold">{sessionMode ? t("复习中") : t("复习计划")}</h1>
+        {/* <h1 className="text-xl font-bold">{sessionMode ? t("复习中") : t("复习计划")}</h1> */}
         {sessionMode && <button type="button" onClick={() => void returnToPlan()} className="text-sm font-medium text-primary-text underline">{t("返回计划")}</button>}
       </header>
 
       <section className="rounded-2xl border border-border bg-surface p-4" aria-label={t("复习计划概览")}>
-        <h2 className="text-sm font-semibold text-text">{t("复习统计")}</h2>
-        <p className="mt-1 text-xs text-text-muted">{activeDeck.icon} {activeDeck.id === "default" && activeDeck.name === "默认闪卡库" ? t("默认闪卡库") : activeDeck.name} · {t("本库复习范围")}</p>
+        {/* <h2 className="text-sm font-semibold text-text">{t("复习统计")}</h2> */}
+        {/* <p className="mt-1 text-xs text-text-muted">{activeDeck.icon} {activeDeck.id === "default" && activeDeck.name === "默认闪卡库" ? t("默认闪卡库") : activeDeck.name} · {t("本库复习范围")}</p> */}
         <dl className="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-4">
           <PlanStat label={t("今日待复习")} value={planStats.dueToday} />
           <PlanStat label={t("今日已完成")} value={planStats.completedToday} />
@@ -358,6 +358,7 @@ export function ReviewPage() {
           </p>
         ) : (
           <div className="mt-6 max-h-[55vh] space-y-3 overflow-y-auto overscroll-contain border-t border-border pt-4 pr-1">
+            
             {current.cardType === "custom" ? <section className="space-y-3" onClick={(event) => event.stopPropagation()}>
               <p className="whitespace-pre-wrap text-base leading-relaxed text-text">{getFlashcardBack(current)}</p>
               {current.notes && <div className="rounded-lg bg-surface-hover p-3"><h3 className="mb-1 text-xs font-semibold uppercase tracking-wide text-text-muted">{t("备注")}</h3><p className="whitespace-pre-wrap text-sm leading-relaxed text-text">{current.notes}</p></div>}

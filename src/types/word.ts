@@ -11,6 +11,15 @@ export interface DictionaryEntry {
     register?: string;
     usageFrequency?: string;
   }[];
+    compoundAnalysis?: {
+    components: {
+      word: string;
+      meaning: string;
+      sourceUrl?: string;
+    }[];
+    inferredMeaning: string;
+    source: "Wiktionary";
+  };
   examples?: {
     text: string;
     translation?: string;

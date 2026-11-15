@@ -59,10 +59,34 @@ export class WiktionaryProvider implements DictionaryProvider {
         attempts.push({ query: variant, status: "failed", reason: error instanceof Error ? error.message : "UNKNOWN_ERROR" });
       }
     }
-    if (!foundEntries.length) {
-      // An empty result is definitive only when every spelling attempt completed successfully.
-      console.debug("[Meoini dictionary lookup]", { source: "Wiktionary", word: query, language, attempts, result: firstError ? "failed" : "empty", reason: firstError instanceof Error ? firstError.message : undefined });
+    // if (!foundEntries.length) {
+    //   // An empty result is definitive only when every spelling attempt completed successfully.
+    //   console.debug("[Meoini dictionary lookup]", { source: "Wiktionary", word: query, language, attempts, result: firstError ? "failed" : "empty", reason: firstError instanceof Error ? firstError.message : undefined });
+    //   if (firstError) throw firstError;
+    //   return [];
+    // }
+        if (!foundEntries.length) {
+      console.debug("[Meoini dictionary lookup]", {
+        source: "Wiktionary",
+        word: query,
+        language,
+        attempts,
+        result: firstError ? "failed" : "empty",
+        reason: firstError instanceof Error ? firstError.message : undefined,
+      });
+
       if (firstError) throw firstError;
+
+      if (language === "fi") {
+        const compound = await this.analyzeFinnishKaveriCompound(
+          query,
+          attempts,
+          signal,
+        );
+
+        if (compound) return [compound];
+      }
+
       return [];
     }
 
