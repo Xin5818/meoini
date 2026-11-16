@@ -1,0 +1,580 @@
+openapi: 3.0.0
+
+info:
+  title: Meoini API
+  description: REST API for the Meoini vocabulary learning application.
+  version: 1.0.0
+
+servers:
+  - url: http://localhost:8080
+    description: Local development server
+
+tags:
+  - name: Users
+    description: User profile operations
+  - name: Decks
+    description: Vocabulary deck operations
+  - name: Flashcards
+    description: Flashcard operations
+  - name: Reviews
+    description: Flashcard review operations
+
+security:
+  - BearerAuth: []
+
+paths:
+
+  # ==========================================
+  # Users
+  # ==========================================
+
+  /api/me:
+    get:
+      tags:
+        - Users
+      summary: Get current user
+      operationId: getCurrentUser
+      responses:
+        '200':
+          description: Current user information
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  # ==========================================
+  # Decks
+  # ==========================================
+
+  /api/decks:
+    get:
+      tags:
+        - Decks
+      summary: Get all decks
+      operationId: getDecks
+      responses:
+        '200':
+          description: List of decks
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Deck'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+    post:
+      tags:
+        - Decks
+      summary: Create a deck
+      operationId: createDeck
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DeckInput'
+      responses:
+        '201':
+          description: Deck created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Deck'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /api/decks/{deckId}:
+    parameters:
+      - $ref: '#/components/parameters/DeckId'
+
+    get:
+      tags:
+        - Decks
+      summary: Get a deck
+      operationId: getDeck
+      responses:
+        '200':
+          description: Deck information
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Deck'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+    put:
+      tags:
+        - Decks
+      summary: Update a deck
+      operationId: updateDeck
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DeckInput'
+      responses:
+        '200':
+          description: Deck updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Deck'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+    delete:
+      tags:
+        - Decks
+      summary: Delete a deck
+      operationId: deleteDeck
+      parameters:
+        - name: deleteMode
+          in: query
+          required: false
+          description: Whether to delete the deck's flashcards or move them to the default deck.
+          schema:
+            type: string
+            enum:
+              - delete-cards
+              - move-to-default
+            default: delete-cards
+      responses:
+        '204':
+          description: Deck deleted
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  # ==========================================
+  # Flashcards
+  # ==========================================
+
+  /api/decks/{deckId}/flashcards:
+    parameters:
+      - $ref: '#/components/parameters/DeckId'
+
+    get:
+      tags:
+        - Flashcards
+      summary: Get flashcards in a deck
+      operationId: getDeckFlashcards
+      parameters:
+        - name: dueOnly
+          in: query
+          required: false
+          schema:
+            type: boolean
+            default: false
+      responses:
+        '200':
+          description: List of flashcards
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Flashcard'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+    post:
+      tags:
+        - Flashcards
+      summary: Create a flashcard
+      operationId: createFlashcard
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/FlashcardInput'
+      responses:
+        '201':
+          description: Flashcard created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Flashcard'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /api/flashcards/{flashcardId}:
+    parameters:
+      - $ref: '#/components/parameters/FlashcardId'
+
+    get:
+      tags:
+        - Flashcards
+      summary: Get a flashcard
+      operationId: getFlashcard
+      responses:
+        '200':
+          description: Flashcard information
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Flashcard'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+    put:
+      tags:
+        - Flashcards
+      summary: Update a flashcard
+      operationId: updateFlashcard
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/FlashcardInput'
+      responses:
+        '200':
+          description: Flashcard updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Flashcard'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+    delete:
+      tags:
+        - Flashcards
+      summary: Delete a flashcard
+      operationId: deleteFlashcard
+      responses:
+        '204':
+          description: Flashcard deleted
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  # ==========================================
+  # Reviews
+  # ==========================================
+
+  /api/flashcards/{flashcardId}/reviews:
+    parameters:
+      - $ref: '#/components/parameters/FlashcardId'
+
+    get:
+      tags:
+        - Reviews
+      summary: Get flashcard review history
+      operationId: getReviewHistory
+      responses:
+        '200':
+          description: Review history
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ReviewLog'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+    post:
+      tags:
+        - Reviews
+      summary: Submit a flashcard review
+      operationId: createReview
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ReviewInput'
+      responses:
+        '201':
+          description: Review recorded
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ReviewLog'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+# ==========================================
+# Components
+# ==========================================
+
+components:
+
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: Supabase access token
+
+  parameters:
+    DeckId:
+      name: deckId
+      in: path
+      required: true
+      schema:
+        type: string
+
+    FlashcardId:
+      name: flashcardId
+      in: path
+      required: true
+      schema:
+        type: string
+
+  schemas:
+
+    User:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        email:
+          type: string
+          nullable: true
+        createdAt:
+          type: string
+          format: date-time
+
+    Deck:
+      allOf:
+        - $ref: '#/components/schemas/DeckInput'
+        - type: object
+          required:
+            - id
+            - createdAt
+            - updatedAt
+          properties:
+            createdAt:
+              type: string
+              format: date-time
+            updatedAt:
+              type: string
+              format: date-time
+
+    DeckInput:
+      type: object
+      required:
+        - id
+        - name
+        - description
+        - language
+        - icon
+        - color
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        description:
+          type: string
+        language:
+          type: string
+        icon:
+          type: string
+        color:
+          type: string
+
+    Flashcard:
+      allOf:
+        - $ref: '#/components/schemas/FlashcardInput'
+        - type: object
+          required:
+            - id
+            - createdAt
+            - updatedAt
+          properties:
+            createdAt:
+              type: string
+              format: date-time
+            updatedAt:
+              type: string
+              format: date-time
+
+    FlashcardInput:
+      type: object
+      required:
+        - cardType
+        - word
+        - language
+        - meaning
+        - dueAt
+      properties:
+        cardType:
+          type: string
+          enum:
+            - dictionary
+            - custom
+        front:
+          type: string
+          nullable: true
+        back:
+          type: string
+          nullable: true
+        notes:
+          type: string
+          nullable: true
+        audioUrl:
+          type: string
+          nullable: true
+        imageUrl:
+          type: string
+          nullable: true
+        word:
+          type: string
+        language:
+          type: string
+        meaning:
+          type: string
+        partOfSpeech:
+          type: string
+          nullable: true
+        example:
+          type: string
+          nullable: true
+        dictionaryEntry:
+          type: object
+          nullable: true
+          additionalProperties: true
+        lookupStatus:
+          type: string
+          nullable: true
+          enum:
+            - pending
+            - querying
+            - found
+            - not_found
+            - error
+        lookupStartedAt:
+          type: string
+          format: date-time
+          nullable: true
+        lookupCompletedAt:
+          type: string
+          format: date-time
+          nullable: true
+        lookupError:
+          type: string
+          nullable: true
+        lastReviewedAt:
+          type: string
+          format: date-time
+          nullable: true
+        lastReviewMode:
+          type: string
+          nullable: true
+          enum:
+            - scheduled
+            - early
+        earlyReviewCount:
+          type: integer
+          minimum: 0
+          default: 0
+        tags:
+          type: array
+          items:
+            type: string
+        dueAt:
+          type: string
+          format: date-time
+        intervalDays:
+          type: integer
+          minimum: 0
+          default: 0
+        repetitions:
+          type: integer
+          minimum: 0
+          default: 0
+
+    ReviewLog:
+      type: object
+      required:
+        - id
+        - flashcardId
+        - rating
+        - reviewMode
+        - reviewedAt
+      properties:
+        id:
+          type: string
+          format: uuid
+        flashcardId:
+          type: string
+        rating:
+          type: string
+          enum:
+            - again
+            - hard
+            - good
+        reviewMode:
+          type: string
+          enum:
+            - scheduled
+            - early
+        reviewedAt:
+          type: string
+          format: date-time
+
+    ReviewInput:
+      type: object
+      required:
+        - rating
+        - reviewMode
+      properties:
+        rating:
+          type: string
+          enum:
+            - again
+            - hard
+            - good
+        reviewMode:
+          type: string
+          enum:
+            - scheduled
+            - early
+
+  responses:
+    BadRequest:
+      description: Invalid request
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+
+    Unauthorized:
+      description: Authentication required or token invalid
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+
+    NotFound:
+      description: Resource not found
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+
+    Error:
+      type: object
+      required:
+        - message
+      properties:
+        message:
+          type: string
