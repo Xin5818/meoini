@@ -1,0 +1,14 @@
+replicaCount: 2
+
+image:
+  repository: meoini
+  tag: local
+  pullPolicy: IfNotPresent
+
+service:
+  type: NodePort
+  port: 3000
+  targetPort: 3000
+  nodePort: 30080
+
+containerPort: 3000
