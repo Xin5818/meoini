@@ -1,0 +1,20 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: meoini
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: meoini
+  template:
+    metadata:
+      labels:
+        app: meoini
+    spec:
+      containers:
+        - name: meoini
+          image: meoini:local
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 3000

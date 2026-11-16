@@ -66,29 +66,19 @@ export class WiktionaryProvider implements DictionaryProvider {
     //   return [];
     // }
         if (!foundEntries.length) {
-      console.debug("[Meoini dictionary lookup]", {
-        source: "Wiktionary",
-        word: query,
-        language,
-        attempts,
-        result: firstError ? "failed" : "empty",
-        reason: firstError instanceof Error ? firstError.message : undefined,
-      });
+  console.debug("[Meoini dictionary lookup]", {
+    source: "Wiktionary",
+    word: query,
+    language,
+    attempts,
+    result: firstError ? "failed" : "empty",
+    reason: firstError instanceof Error ? firstError.message : undefined,
+  });
 
-      if (firstError) throw firstError;
+  if (firstError) throw firstError;
 
-      if (language === "fi") {
-        const compound = await this.analyzeFinnishKaveriCompound(
-          query,
-          attempts,
-          signal,
-        );
-
-        if (compound) return [compound];
-      }
-
-      return [];
-    }
+  return [];
+}
 
     const merged = mergeFinnishEntries(query, foundEntries, attempts);
     if (language === "fi") {

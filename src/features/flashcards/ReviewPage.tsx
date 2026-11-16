@@ -15,7 +15,7 @@ type EarlyLimit = 5 | 10 | 20 | "all";
 
 export function ReviewPage() {
   const { t } = useI18n();
-  const { activeDeckId, activeDeck } = useDecks();
+  const { activeDeckId } = useDecks();
   const [queue, setQueue] = useState<Flashcard[]>([]);
   const [current, setCurrent] = useState<Flashcard | null>(null);
   const [revealed, setRevealed] = useState(false);
