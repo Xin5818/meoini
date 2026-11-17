@@ -1,104 +1,205 @@
 # Meoini
 
-A Finnish and English dictionary with flashcards, spaced review, pronunciation support, and offline access.
-https://xin5818.github.io/meoini/
+A Finnish and English dictionary with flashcards, spaced repetition, pronunciation support, and offline access.
 
-## Current status
+**Live Demo:** https://xin5818.github.io/meoini/
 
-Meoini is a browser-based single-page application. Flashcards and review data are stored locally in the browser. Supabase Auth optionally provides account registration, sign-in, sign-out, and session recovery. Cloud flashcard synchronization is not implemented yet.
+## Overview
+
+Meoini is a bilingual Finnish-English vocabulary learning application. It combines dictionary lookup, flashcards, spaced repetition, and pronunciation support to help users build and review vocabulary.
+
+The application is designed as an offline-capable Progressive Web App (PWA), with local data storage and optional account authentication.
 
 ## Features
 
-- Search English and Finnish entries, with suggestions and spelling-tolerant matching.
-- Save dictionary entries as flashcards, or import word lists from TXT and flashcards from CSV.
-- TXT imports can query the dictionary in the background and save successful results locally.
-- Review due cards with spaced repetition, or use early review without changing the SRS schedule.
-- View Finnish pronunciation, available IPA and audio, and word-specific pronunciation tips.
-- Install as a PWA and use the app shell and locally saved flashcards offline.
+- **Dictionary:** Look up Finnish and English words with spelling-tolerant suggestions.
+- **Flashcards:** Save vocabulary and organize it into decks.
+- **Spaced Repetition:** Review vocabulary using a scheduled review system.
+- **Pronunciation:** Access Finnish pronunciation information, IPA, and audio where available.
+- **Import and Export:** Import vocabulary from TXT and CSV files.
+- **Offline Access:** Use the application offline through PWA support.
+- **Authentication:** Register, sign in, sign out, and recover sessions with Supabase Auth.
 
-## Technology
+## Development Status
 
-- **React 19 + TypeScript** for the interface and application logic.
-- **Vite** for local development and production builds.
-- **Tailwind CSS v4** for styling.
-- **React Router** for the four application pages.
-- **Dexie + IndexedDB** for local flashcard storage.
-- **vite-plugin-pwa + Workbox** for installation and offline caching.
-- **Supabase Auth** for optional account authentication; no flashcard sync service is connected.
+| Component | Status |
+|---|---|
+| Dictionary and vocabulary lookup | Implemented |
+| Flashcards and spaced repetition | Implemented |
+| Local storage with IndexedDB | Implemented |
+| PWA and offline support | Implemented |
+| Supabase authentication | Implemented |
+| PostgreSQL database schema | Created |
+| Go backend API | In development |
+| Backend database integration | Planned |
+| Cloud synchronization | Planned |
+| Multi-device synchronization | Planned |
 
-The browser application uses TypeScript/JavaScript. Python and C# are not part of the current runtime or build stack.
+Flashcards and review data are currently stored locally in the browser. Cloud synchronization has not yet been implemented.
 
-## Application architecture
+## Technology Stack
+
+**Frontend**
+- React 19
+- TypeScript
+- Vite
+- Tailwind CSS v4
+- React Router
+- Dexie and IndexedDB
+- vite-plugin-pwa and Workbox
+
+**Backend**
+- Go
+- REST API (in development)
+
+**Database and Authentication**
+- Supabase Auth
+- Supabase PostgreSQL
+
+**Deployment and Infrastructure**
+- GitHub Pages
+- Docker
+- Kubernetes and Helm (development environment)
+
+## Project Structure
 
 ```text
-src/
-├── app/                  # App shell and routes
-├── components/           # Shared UI components
-├── db/                   # Dexie database and IndexedDB operations
-├── features/
-│   ├── auth/             # Optional Supabase Auth
-│   ├── dictionary/       # Providers, search, parsing, and pronunciation
-│   ├── flashcards/       # Search, library, review, and SRS logic
-│   ├── import-export/    # TXT/CSV parsing and persistence
-│   └── settings/         # Preferences and settings page
-├── hooks/                # Reusable React hooks
-├── types/                # Shared TypeScript types
-└── utils/                # Shared utilities
+Meoini/
+├── backend/
+│   ├── cmd/api/
+│   ├── docs/
+│   └── internal/
+│       ├── config/
+│       ├── handler/
+│       ├── middleware/
+│       ├── model/
+│       ├── repository/
+│       └── service/
+├── docs/
+│   ├── database-design.md
+│   ├── database-erd.md
+│   ├── database-schema.sql
+│   ├── openapi.yaml
+│   └── migration-plan.md
+├── helm/
+│   └── meoini/
+├── src/
+├── Dockerfile
+└── README.md
 ```
 
-### Main routes and data flow
+## Application Routes
 
-- `/` — dictionary search and save-to-flashcard flow.
-- `/review` — review plan, due review, and early practice.
-- `/library` — local flashcard library and lookup status.
-- `/settings` — language preference, account, and import/export.
+| Route | Description |
+|---|---|
+| `/` | Dictionary and vocabulary lookup |
+| `/review` | Review flashcards |
+| `/library` | Saved vocabulary |
+| `/settings` | Application settings |
 
-Dictionary results are parsed by providers and converted to the app's `DictionaryEntry` and `Flashcard` types. Flashcards are saved in IndexedDB through Dexie. Scheduled reviews update the local card's review schedule. Early practice records practice metadata while preserving `dueAt`, `intervalDays`, and `repetitions`.
+## Getting Started
 
-## Dictionary sources
+### Prerequisites
 
-- **English (`en`)**: Free Dictionary API, with Wiktionary as a fallback.
-- **Finnish (`fi`)**: Wiktionary.
-- Dictionary results and suggestions usually require network access, unless a response is available from the browser cache. Saved flashcards remain available offline.
+- Node.js 24
+- npm
+- Go 1.22 or later (for backend development)
 
-## Supabase Auth configuration
+### Frontend
 
-Authentication is optional. Copy `.env.example` to `.env.local` and provide:
+Clone the repository:
 
-```dotenv
-VITE_SUPABASE_URL=your-project-url
-VITE_SUPABASE_PUBLISHABLE_KEY=your-publishable-key
+```bash
+git clone git@github.com:Xin5818/Meoini.git
+cd Meoini
 ```
 
-For GitHub Pages deployment, configure the same values as GitHub Actions secrets. Never expose a Supabase `service_role` key in a browser build. See [SUPABASE_AUTH_SETUP.md](./SUPABASE_AUTH_SETUP.md) for redirect URL setup.
-
-## Local development
-
-Use Node.js 24, matching the GitHub Actions build environment.
+Install dependencies:
 
 ```bash
 npm ci
+```
+
+Start the development server:
+
+```bash
 npm run dev
 ```
 
-Available commands:
+### Backend
+
+Navigate to the backend directory:
 
 ```bash
-npm test        # Run tests
-npm run lint    # Run Oxlint
-npm run build   # Type-check and create the production build
-npm run preview # Preview dist/ locally
+cd backend
 ```
+
+Start the Go server:
+
+```bash
+go run ./cmd/api
+```
+
+The backend runs on port `8082` by default.
+
+Health check:
+
+```bash
+curl http://localhost:8082/health
+```
+
+Expected response:
+
+```json
+{"status":"ok"}
+```
+
+The backend currently provides an initial HTTP server and health check endpoint. API endpoints and database integration are still under development.
+
+## Environment Configuration
+
+The frontend uses the following environment variables for Supabase authentication:
+
+```env
+VITE_SUPABASE_URL=your_supabase_project_url
+VITE_SUPABASE_PUBLISHABLE_KEY=your_supabase_publishable_key
+```
+
+Keep private credentials and secret keys out of the repository.
 
 ## Deployment
 
-Vite is configured with the GitHub Pages project base `/meoini/`. The GitHub Actions workflow builds the app and deploys the `dist/` directory when changes are pushed to `main` or `master`.
+The frontend is deployed to GitHub Pages:
 
-## Key files
+https://xin5818.github.io/meoini/
 
-- `src/app/routes.tsx` — route definitions.
-- `src/features/dictionary/dictionaryService.ts` — supported languages and provider chains.
-- `src/db/database.ts` — Dexie schema and flashcard persistence.
-- `src/features/flashcards/review.ts` and `reviewPlan.ts` — scheduled review and early-practice rules.
-- `src/features/import-export/` — TXT/CSV import and export.
-- `vite.config.ts` — Vite base path and PWA configuration.
+GitHub Actions builds and deploys the frontend.
+
+The Go backend is a separate service and requires its own hosting environment. It is not hosted by GitHub Pages.
+
+Docker and Kubernetes are used during backend and deployment development.
+
+## Documentation
+
+Detailed technical documentation is available in the [`docs/`](docs/) directory:
+
+- `database-design.md`: Database design.
+- `database-erd.md`: Entity relationship diagram.
+- `database-schema.sql`: Database schema.
+- `openapi.yaml`: API specification.
+- `migration-plan.md`: Local data migration and synchronization plan.
+
+## Roadmap
+
+- [x] Build the dictionary and vocabulary learning frontend.
+- [x] Implement local flashcards and spaced repetition.
+- [x] Add offline support.
+- [x] Integrate Supabase authentication.
+- [x] Create the PostgreSQL database schema.
+- [x] Initialize the Go backend.
+- [ ] Implement backend API endpoints.
+- [ ] Connect the backend to PostgreSQL.
+- [ ] Implement JWT authentication and authorization.
+- [ ] Integrate frontend APIs.
+- [ ] Implement cloud synchronization and data migration.
+- [ ] Complete containerized deployment and testing.
